@@ -14,9 +14,14 @@ const GitHeader: React.FC<GitHeaderProps> = ({ className }) => {
         <GitBranch className="h-6 w-6 text-primary" />
         <h1 className="text-2xl font-bold text-gray-800">scriptcase</h1>
       </div>
-      <p className="text-sm text-gray-500 mt-1">
+      <a 
+        href="http://athena.scriptcase.net:8092/scriptcase-git/" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="text-sm text-blue-500 hover:text-blue-700 hover:underline mt-1"
+      >
         http://athena.scriptcase.net:8092/scriptcase-git/
-      </p>
+      </a>
     </div>
   );
 };

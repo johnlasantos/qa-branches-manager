@@ -4,6 +4,12 @@ import { AlertTriangle, ArrowLeftRight, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import BranchIcon from './BranchIcon';
 import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export interface Branch {
   name: string;
@@ -73,28 +79,44 @@ const BranchList: React.FC<BranchListProps> = ({
               <div className="flex space-x-2">
                 {!branch.isCurrent && (
                   <>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => onSwitchBranch(branch.name)}
-                      className="flex items-center space-x-1"
-                    >
-                      <ArrowLeftRight size={14} />
-                      <span>Switch</span>
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => onSwitchBranch(branch.name)}
+                            className="flex items-center"
+                          >
+                            <ArrowLeftRight size={16} />
+                            <span className="ml-1">Change</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Change to this branch</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                     
                     {!branch.hasRemote && (
-                      <>
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => onDeleteBranch(branch.name)}
-                          className="flex items-center space-x-1"
-                        >
-                          <Trash2 size={14} />
-                          <span>Delete</span>
-                        </Button>
-                      </>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={() => onDeleteBranch(branch.name)}
+                              className="flex items-center"
+                            >
+                              <Trash2 size={16} />
+                              <span className="ml-1">Delete</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Delete this branch</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
                   </>
                 )}

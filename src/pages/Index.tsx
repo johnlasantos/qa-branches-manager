@@ -149,11 +149,11 @@ const Index = () => {
     : localBranches;
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-5xl">
+    <div className="container mx-auto px-4 py-6 max-w-7xl">
       <GitHeader />
       
-      <div className="grid grid-cols-1 gap-6 mt-6">
-        <div className="bg-white p-5 rounded-lg shadow-sm border">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        <div className="lg:col-span-2 bg-white p-5 rounded-lg shadow-sm border">
           <div className="flex flex-col space-y-4">
             <ActionButtons 
               onUpdateCurrentBranch={handleUpdateCurrentBranch}
@@ -181,7 +181,9 @@ const Index = () => {
           </div>
         </div>
         
-        <GitOutput output={gitOutput} />
+        <div className="lg:col-span-1">
+          <GitOutput output={gitOutput} />
+        </div>
       </div>
     </div>
   );
