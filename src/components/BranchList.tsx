@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { AlertTriangle, ArrowLeftRight, Trash2 } from 'lucide-react';
+import { AlertTriangle, ArrowLeftRight, Trash2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import BranchIcon from './BranchIcon';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,7 @@ interface BranchListProps {
   branches: Branch[];
   onSwitchBranch: (branchName: string) => void;
   onDeleteBranch: (branchName: string) => void;
+  onUpdateCurrentBranch: () => void;
   className?: string;
   isLoading?: boolean;
 }
@@ -28,7 +29,8 @@ interface BranchListProps {
 const BranchList: React.FC<BranchListProps> = ({ 
   branches, 
   onSwitchBranch, 
-  onDeleteBranch, 
+  onDeleteBranch,
+  onUpdateCurrentBranch,
   className,
   isLoading = false
 }) => {
@@ -77,7 +79,24 @@ const BranchList: React.FC<BranchListProps> = ({
               </div>
               
               <div className="flex space-x-2">
-                {!branch.isCurrent && (
+                {branch.isCurrent ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          size="sm" 
+                          onClick={onUpdateCurrentBranch}
+                          className="flex items-center"
+                        >
+                          <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Update this branch</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
                   <>
                     <TooltipProvider>
                       <Tooltip>
@@ -89,7 +108,6 @@ const BranchList: React.FC<BranchListProps> = ({
                             className="flex items-center"
                           >
                             <ArrowLeftRight size={16} />
-                            <span className="ml-1">Change</span>
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -109,7 +127,6 @@ const BranchList: React.FC<BranchListProps> = ({
                               className="flex items-center"
                             >
                               <Trash2 size={16} />
-                              <span className="ml-1">Delete</span>
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>

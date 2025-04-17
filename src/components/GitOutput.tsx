@@ -12,7 +12,7 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
   return (
     <div className={cn("w-full", className)}>
       <h2 className="text-lg font-semibold mb-2">Command Output</h2>
-      <ScrollArea className="h-[calc(100vh-12rem)] border border-gray-300 rounded">
+      <ScrollArea className="h-[calc(100vh-12rem)]">
         <pre className="git-output text-sm p-4 whitespace-pre-wrap">
           {output || 'No output to display'}
         </pre>

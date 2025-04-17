@@ -7,7 +7,8 @@ import {
   Rocket, 
   FlaskConical, 
   GitBranch, 
-  XCircle 
+  XCircle,
+  Globe
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -40,6 +41,15 @@ const BranchIcon: React.FC<BranchIconProps> = ({ branchName, hasRemote, classNam
   return (
     <div className={cn("relative flex items-center", className)}>
       {renderIcon()}
+      
+      {/* Remote indicator */}
+      {hasRemote && (
+        <div className="absolute -bottom-1 -right-1">
+          <Globe size={10} className="text-blue-500" />
+        </div>
+      )}
+      
+      {/* Non-remote indicator */}
       {!hasRemote && (
         <div className="absolute -top-1 -right-1">
           <XCircle size={12} className="text-red-500 fill-white" />

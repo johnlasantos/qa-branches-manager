@@ -4,8 +4,9 @@ import GitHeader from '@/components/GitHeader';
 import BranchList, { Branch } from '@/components/BranchList';
 import BranchSearch, { RemoteBranch } from '@/components/BranchSearch';
 import GitOutput from '@/components/GitOutput';
-import ActionButtons from '@/components/ActionButtons';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
   getLocalBranches, 
@@ -16,6 +17,12 @@ import {
   cleanupBranches,
   searchBranches
 } from '@/services/gitService';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const Index = () => {
   const [localBranches, setLocalBranches] = useState<Branch[]>([]);
@@ -152,33 +159,49 @@ const Index = () => {
     <div className="container mx-auto px-4 py-6 max-w-7xl">
       <GitHeader />
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-        <div className="lg:col-span-2 bg-white p-5 rounded-lg shadow-sm border">
-          <div className="flex flex-col space-y-4">
-            <ActionButtons 
-              onUpdateCurrentBranch={handleUpdateCurrentBranch}
-              onCleanupBranches={handleCleanupBranches}
-              isLoading={isLoading}
-            />
-            
-            <div className="pt-2">
-              <BranchSearch 
-                remoteBranches={remoteBranches}
-                onSearch={handleSearch}
-                onSelectRemoteBranch={handleSelectRemoteBranch}
-              />
-            </div>
-            
-            <Separator className="my-4" />
-            
+      <div className="pt-2">
+        <BranchSearch 
+          remoteBranches={remoteBranches}
+          onSearch={handleSearch}
+          onSelectRemoteBranch={handleSelectRemoteBranch}
+        />
+      </div>
+      
+      <Separator className="my-4" />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6">
+        <div className="lg:col-span-3 space-y-4">
+          <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Local Branches</h2>
-            <BranchList 
-              branches={filteredLocalBranches}
-              onSwitchBranch={handleSwitchBranch}
-              onDeleteBranch={handleDeleteBranch}
-              isLoading={isLoading}
-            />
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleCleanupBranches}
+                    disabled={isLoading}
+                    className="flex items-center text-destructive border-destructive/30 hover:bg-destructive/10"
+                  >
+                    <Trash2 size={16} className="mr-2" />
+                    <span>Delete deprecated branches</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>This will permanently delete local branches that no longer exist remotely</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
+          
+          <BranchList 
+            branches={filteredLocalBranches}
+            onSwitchBranch={handleSwitchBranch}
+            onDeleteBranch={handleDeleteBranch}
+            onUpdateCurrentBranch={handleUpdateCurrentBranch}
+            isLoading={isLoading}
+          />
         </div>
         
         <div className="lg:col-span-1">
