@@ -75,7 +75,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
         <Input
           ref={inputRef}
           type="text"
-          placeholder="Search branches..."
+          placeholder="Search remote branches..."
           value={searchQuery}
           onChange={handleSearchChange}
           className="pl-9"

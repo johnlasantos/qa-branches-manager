@@ -14,6 +14,7 @@ const GitHeader: React.FC<GitHeaderProps> = ({ className }) => {
         <GitBranch className="h-6 w-6 text-primary" />
         <h1 className="text-2xl font-bold text-gray-800">Branches Manager</h1>
       </div>
+      <h1 className="text-sm font-bold text-gray-500">scriptcase-git repository</h1>
       <a 
         href="http://athena.scriptcase.net:8092/scriptcase-git/" 
         target="_blank" 
