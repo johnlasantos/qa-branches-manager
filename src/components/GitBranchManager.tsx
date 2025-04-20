@@ -35,6 +35,7 @@ const GitBranchManager: React.FC = () => {
       <div className="pt-2">
         <BranchSearch 
           remoteBranches={remoteBranches}
+          localBranches={localBranches}
           onSearch={handleSearch}
           onSelectRemoteBranch={handleSwitchBranch}
         />
@@ -43,8 +44,8 @@ const GitBranchManager: React.FC = () => {
       <Separator className="my-4" />
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6">
-        <div className="lg:col-span-3 space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="lg:col-span-3">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Local Branches</h2>
             <BranchCleanupButton onCleanup={handleCleanupBranches} isLoading={isLoading} />
           </div>
@@ -59,7 +60,7 @@ const GitBranchManager: React.FC = () => {
         </div>
         
         <div className="lg:col-span-1">
-          <GitOutput output={gitOutput} />
+          <GitOutput output={gitOutput} className="h-full" />
         </div>
       </div>
     </div>

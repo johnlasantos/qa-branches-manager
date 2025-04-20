@@ -18,6 +18,7 @@ export interface RemoteBranch {
 
 interface BranchSearchProps {
   remoteBranches: RemoteBranch[];
+  localBranches: { name: string }[];
   onSearch: (query: string) => void;
   onSelectRemoteBranch: (branchName: string) => void;
   className?: string;
@@ -25,6 +26,7 @@ interface BranchSearchProps {
 
 const BranchSearch: React.FC<BranchSearchProps> = ({ 
   remoteBranches, 
+  localBranches,
   onSearch, 
   onSelectRemoteBranch,
   className 
@@ -35,10 +37,14 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const localBranchNames = new Set(localBranches.map(b => b.name));
+  
   const filteredBranches = remoteBranches
-    .filter(branch => 
-      branch.name.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    .filter(branch => {
+      const matchesSearch = branch.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const notInLocal = !localBranchNames.has(branch.name);
+      return matchesSearch && notInLocal;
+    })
     .slice(0, 10);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,16 +106,26 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
             className="pl-9"
           />
         </div>
-        {selectedBranch && (
-          <Button
-            onClick={handleCheckout}
-            size="sm"
-            className="whitespace-nowrap bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
-          >
-            <GitBranch className="mr-2 h-4 w-4" />
-            Create local branch
-          </Button>
-        )}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <Button
+                  onClick={handleCheckout}
+                  size="sm"
+                  disabled={!selectedBranch}
+                  className="whitespace-nowrap bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 disabled:opacity-50"
+                >
+                  <GitBranch className="mr-2 h-4 w-4" />
+                  Create local branch
+                </Button>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Create a local branch from the selected remote branch</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
       
       {showSuggestions && filteredBranches.length > 0 && (
