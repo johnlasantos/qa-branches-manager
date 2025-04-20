@@ -104,10 +104,10 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
           <Button
             onClick={handleCheckout}
             size="sm"
-            className="whitespace-nowrap"
+            className="whitespace-nowrap bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
           >
             <GitBranch className="mr-2 h-4 w-4" />
-            Checkout Branch
+            Create local branch
           </Button>
         )}
       </div>
