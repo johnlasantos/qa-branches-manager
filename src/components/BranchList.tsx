@@ -42,7 +42,7 @@ const BranchList: React.FC<BranchListProps> = ({
 
   if (isLoading) {
     return (
-      <div className={cn("w-full", className)}>
+      <div className={cn("w-full h-[calc(100vh-20rem)]", className)}>
         <div className="animate-pulse space-y-3">
           {[1, 2, 3, 4, 5].map((item) => (
             <div key={item} className="h-14 bg-gray-200 rounded"></div>
@@ -61,7 +61,7 @@ const BranchList: React.FC<BranchListProps> = ({
   }
 
   return (
-    <div className={cn("w-full", className)}>
+    <div className={cn("w-full h-[calc(100vh-20rem)]", className)}>
       <div className="relative mb-4">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
         <Input
@@ -103,7 +103,8 @@ const BranchList: React.FC<BranchListProps> = ({
                         <Button 
                           size="sm" 
                           onClick={onUpdateCurrentBranch}
-                          className="flex items-center"
+                          variant="secondary"
+                          className="flex items-center bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
                         >
                           <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
                         </Button>
@@ -119,10 +120,10 @@ const BranchList: React.FC<BranchListProps> = ({
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button 
-                            variant="outline" 
+                            variant="secondary" 
                             size="sm" 
                             onClick={() => onSwitchBranch(branch.name)}
-                            className="flex items-center"
+                            className="flex items-center bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
                           >
                             <ArrowLeftRight size={16} />
                           </Button>
@@ -138,10 +139,10 @@ const BranchList: React.FC<BranchListProps> = ({
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button 
-                              variant="destructive" 
+                              variant="secondary" 
                               size="sm"
                               onClick={() => onDeleteBranch(branch.name)}
-                              className="flex items-center"
+                              className="flex items-center bg-red-50 hover:bg-red-100 border-red-200 text-red-700"
                             >
                               <Trash2 size={16} />
                             </Button>
