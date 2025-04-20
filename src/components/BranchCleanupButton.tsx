@@ -24,7 +24,7 @@ const BranchCleanupButton: React.FC<BranchCleanupButtonProps> = ({ onCleanup, is
             size="sm"
             onClick={onCleanup}
             disabled={isLoading}
-            className="flex items-center text-destructive border-destructive/30 hover:bg-destructive/10"
+            className="flex items-center text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive/90"
           >
             <Trash2 size={16} className="mr-2" />
             <span>Delete deprecated branches</span>

@@ -117,7 +117,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
                   className="whitespace-nowrap bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 disabled:opacity-50"
                 >
                   <GitBranch className="mr-2 h-4 w-4" />
-                  Create local branch
+                  Import to local branch
                 </Button>
               </div>
             </TooltipTrigger>
