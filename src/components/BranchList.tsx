@@ -1,7 +1,7 @@
-
-import React from 'react';
-import { AlertTriangle, ArrowLeftRight, Trash2, RefreshCw } from 'lucide-react';
+import React, { useState } from 'react';
+import { AlertTriangle, ArrowLeftRight, Trash2, RefreshCw, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import BranchIcon from './BranchIcon';
 import { cn } from '@/lib/utils';
 import {
@@ -34,6 +34,12 @@ const BranchList: React.FC<BranchListProps> = ({
   className,
   isLoading = false
 }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredBranches = branches.filter(branch =>
+    branch.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (isLoading) {
     return (
       <div className={cn("w-full", className)}>
@@ -56,8 +62,19 @@ const BranchList: React.FC<BranchListProps> = ({
 
   return (
     <div className={cn("w-full", className)}>
+      <div className="relative mb-4">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+        <Input
+          type="text"
+          placeholder="Search local branches..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
       <ul className="space-y-2">
-        {branches.map((branch) => (
+        {filteredBranches.map((branch) => (
           <li 
             key={branch.name}
             className={cn(

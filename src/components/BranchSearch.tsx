@@ -1,9 +1,15 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Search } from 'lucide-react';
+import { Search, GitBranch } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import BranchIcon from './BranchIcon';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export interface RemoteBranch {
   name: string;
@@ -54,7 +60,6 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
     }
   };
 
-  // Close suggestions when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -89,11 +94,29 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
             {filteredBranches.map((branch) => (
               <li 
                 key={branch.name}
-                className="px-3 py-2 cursor-pointer hover:bg-gray-100 flex items-center"
-                onClick={() => handleSelectBranch(branch.name)}
+                className="px-3 py-2 hover:bg-gray-100 flex items-center justify-between group"
               >
-                <BranchIcon branchName={branch.name} hasRemote={true} className="mr-2" />
-                <span>{branch.name}</span>
+                <div className="flex items-center" onClick={() => handleSelectBranch(branch.name)}>
+                  <BranchIcon branchName={branch.name} hasRemote={true} className="mr-2" />
+                  <span>{branch.name}</span>
+                </div>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100"
+                        onClick={() => onSelectRemoteBranch(branch.name)}
+                      >
+                        <GitBranch className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Checkout this branch</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </li>
             ))}
           </ul>
