@@ -104,7 +104,7 @@ const BranchList: React.FC<BranchListProps> = ({
                           size="sm" 
                           onClick={onUpdateCurrentBranch}
                           variant="secondary"
-                          className="flex items-center bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+                          className="flex items-center bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
                         >
                           <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
                         </Button>
