@@ -47,6 +47,9 @@ const BranchList: React.FC<BranchListProps> = ({
   isLoading = false
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  // Local state to track which "switch" or "update" dialog should open
+  const [switchDialogBranch, setSwitchDialogBranch] = useState<string | null>(null);
+  const [showUpdateDialog, setShowUpdateDialog] = useState<boolean>(false);
 
   const filteredBranches = branches.filter(branch =>
     branch.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -109,17 +112,45 @@ const BranchList: React.FC<BranchListProps> = ({
               
               <div className="flex space-x-2">
                 {branch.isCurrent ? (
+                  // === UPDATE BRANCH BUTTON WITH CONFIRMATION ===
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button 
-                          size="sm" 
-                          onClick={onUpdateCurrentBranch}
-                          variant="secondary"
-                          className="flex items-center bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
-                        >
-                          <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
-                        </Button>
+                        <div>
+                          <AlertDialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                onClick={() => setShowUpdateDialog(true)}
+                                variant="secondary"
+                                className="flex items-center bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
+                              >
+                                <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Update current branch?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will fetch and update the current branch from its remote counterpart.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => {
+                                    setShowUpdateDialog(false);
+                                    onUpdateCurrentBranch();
+                                  }}
+                                >
+                                  Update
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </TooltipTrigger>
                       <TooltipContent>
                         <p>Update this branch</p>
@@ -128,17 +159,45 @@ const BranchList: React.FC<BranchListProps> = ({
                   </TooltipProvider>
                 ) : (
                   <>
+                    {/* === SWITCH BRANCH BUTTON WITH CONFIRMATION === */}
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button 
-                            variant="secondary" 
-                            size="sm" 
-                            onClick={() => onSwitchBranch(branch.name)}
-                            className="flex items-center bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
-                          >
-                            <ArrowLeftRight size={16} />
-                          </Button>
+                          <div>
+                            <AlertDialog open={switchDialogBranch === branch.name} onOpenChange={(open) => setSwitchDialogBranch(open ? branch.name : null)}>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="secondary" 
+                                  size="sm" 
+                                  onClick={() => setSwitchDialogBranch(branch.name)}
+                                  className="flex items-center bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+                                >
+                                  <ArrowLeftRight size={16} />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Switch to branch <span className="font-mono">{branch.name}</span>?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    You will switch your working directory to this branch.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => {
+                                      setSwitchDialogBranch(null);
+                                      onSwitchBranch(branch.name);
+                                    }}
+                                  >
+                                    Switch
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Change to this branch</p>
@@ -205,3 +264,4 @@ const BranchList: React.FC<BranchListProps> = ({
 };
 
 export default BranchList;
+

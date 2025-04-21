@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, GitBranch } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -10,6 +9,15 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
 } from "@/components/ui/tooltip";
 
 export interface RemoteBranch {
@@ -20,7 +28,6 @@ interface BranchSearchProps {
   remoteBranches: RemoteBranch[];
   localBranches: { name: string }[];
   onSearch: (query: string) => void;
-  // Change: Accept a more flexible onSelectRemoteBranch signature
   onSelectRemoteBranch: (branchName: string, opts?: { imported?: boolean }) => void;
   className?: string;
 }
@@ -37,11 +44,11 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const [showImportDialog, setShowImportDialog] = useState(false);
 
   const localBranchNames = new Set(localBranches.map(b => b.name));
   const remoteBranchNames = new Set(remoteBranches.map(b => b.name));
 
-  // Only show suggestions for remote branches that do not have a local branch
   const filteredBranches = remoteBranches
     .filter(branch => {
       const notInLocal = !localBranchNames.has(branch.name);
@@ -50,16 +57,13 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
     })
     .slice(0, 10);
 
-  // When focusing the input, show suggestions (with top 10)
   const handleInputFocus = () => {
     setShowSuggestions(true);
     if (!searchQuery) {
-      // Show top 10 if not searching yet
       setShowSuggestions(true);
     }
   };
 
-  // Typing in the input
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
@@ -68,7 +72,6 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
     setShowSuggestions(true);
   };
 
-  // Single-click selection
   const handleSelectBranch = (branchName: string) => {
     setSelectedBranch(branchName);
     setShowSuggestions(true);
@@ -78,21 +81,12 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
     }
   };
 
-  // Import/Create local branch from selected branch
   const handleCheckout = () => {
     if (selectedBranch) {
-      // Pass opts: imported = true
-      onSelectRemoteBranch(selectedBranch, { imported: true });
-      setSearchQuery('');
-      setSelectedBranch(null);
-      setShowSuggestions(false);
-      if (inputRef.current) {
-        inputRef.current.value = '';
-      }
+      setShowImportDialog(true);
     }
   };
 
-  // Hide suggestions if clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -103,7 +97,6 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Reset if cleared
   useEffect(() => {
     if (searchQuery.length === 0) {
       setSelectedBranch(null);
@@ -111,7 +104,6 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
     }
   }, [searchQuery]);
 
-  // Only enable import button if a branch from the suggestions is selected
   const importEnabled = selectedBranch !== null &&
     filteredBranches.some(branch => branch.name === selectedBranch);
 
@@ -135,15 +127,48 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <span>
-                <Button
-                  onClick={handleCheckout}
-                  size="sm"
-                  disabled={!importEnabled}
-                  className="whitespace-nowrap bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 disabled:opacity-50"
-                >
-                  <GitBranch className="mr-2 h-4 w-4" />
-                  Create local branch
-                </Button>
+                <AlertDialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      onClick={handleCheckout}
+                      size="sm"
+                      disabled={!importEnabled}
+                      className="whitespace-nowrap bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 disabled:opacity-50"
+                    >
+                      <GitBranch className="mr-2 h-4 w-4" />
+                      Create local branch
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Create a local branch from <span className="font-mono">{selectedBranch}</span>?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will create a new local branch from the selected remote branch.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => {
+                          setShowImportDialog(false);
+                          if (selectedBranch) {
+                            onSelectRemoteBranch(selectedBranch, { imported: true });
+                            setSearchQuery('');
+                            setSelectedBranch(null);
+                            setShowSuggestions(false);
+                            if (inputRef.current) {
+                              inputRef.current.value = '';
+                            }
+                          }
+                        }}
+                      >
+                        Create branch
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </span>
             </TooltipTrigger>
             <TooltipContent>
@@ -167,7 +192,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
                     ? "bg-blue-100 border border-blue-300"
                     : ""
                 )}
-                onMouseDown={e => e.preventDefault()} // Prevent input blur
+                onMouseDown={e => e.preventDefault()}
                 onClick={() => handleSelectBranch(branch.name)}
                 tabIndex={0}
                 aria-selected={selectedBranch === branch.name}
@@ -191,4 +216,3 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
 };
 
 export default BranchSearch;
-
