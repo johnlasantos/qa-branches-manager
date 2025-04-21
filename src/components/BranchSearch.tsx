@@ -34,16 +34,21 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false); // New state
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const localBranchNames = new Set(localBranches.map(b => b.name));
-  
+  const remoteBranchNames = new Set(remoteBranches.map(b => b.name));
+
+  // Only show suggestions for remote branches that DO NOT have a local branch AND DO NOT have a local with the same name remotely
   const filteredBranches = remoteBranches
     .filter(branch => {
-      const matchesSearch = branch.name.toLowerCase().includes(searchQuery.toLowerCase());
+      // Don't list if local branch exists and also exists remotely (so only list branches that aren't local at all)
+      const isLocalAndRemote = localBranchNames.has(branch.name) && remoteBranchNames.has(branch.name);
       const notInLocal = !localBranchNames.has(branch.name);
-      return matchesSearch && notInLocal;
+      const matchesSearch = branch.name.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesSearch && notInLocal && !isLocalAndRemote;
     })
     .slice(0, 10);
 
@@ -52,32 +57,41 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
     setSearchQuery(value);
     onSearch(value);
     setSelectedBranch(null);
-    
-    if (value.length > 0) {
-      setShowSuggestions(true);
-    } else {
-      setShowSuggestions(false);
-    }
+    setHasSearched(true);
+    setShowSuggestions(value.length > 0);
   };
 
+  // Row click now always selects
   const handleSelectBranch = (branchName: string) => {
     setSelectedBranch(branchName);
-    setShowSuggestions(false);
+    setShowSuggestions(true);
     if (inputRef.current) {
       inputRef.current.value = branchName;
     }
   };
 
+  // Explicit checkout
   const handleCheckout = () => {
     if (selectedBranch) {
       onSelectRemoteBranch(selectedBranch);
       setSearchQuery('');
       setSelectedBranch(null);
+      setHasSearched(false);
+      setShowSuggestions(false);
       if (inputRef.current) {
         inputRef.current.value = '';
       }
     }
   };
+
+  // Always allow deselect on empty input
+  useEffect(() => {
+    if (searchQuery.length === 0) {
+      setSelectedBranch(null);
+      setShowSuggestions(false);
+      setHasSearched(false);
+    }
+  }, [searchQuery]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -109,17 +123,17 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div>
+              <span>
                 <Button
                   onClick={handleCheckout}
                   size="sm"
-                  disabled={!selectedBranch}
+                  disabled={!selectedBranch || !hasSearched}
                   className="whitespace-nowrap bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 disabled:opacity-50"
                 >
                   <GitBranch className="mr-2 h-4 w-4" />
-                  Import to local branch
+                  Create local branch
                 </Button>
-              </div>
+              </span>
             </TooltipTrigger>
             <TooltipContent>
               <p>Create a local branch from the selected remote branch</p>
@@ -135,13 +149,23 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
             {filteredBranches.map((branch) => (
               <li 
                 key={branch.name}
-                className="px-3 py-2 hover:bg-gray-100 flex items-center justify-between group cursor-pointer"
+                className={cn(
+                  "px-3 py-2 hover:bg-blue-50 flex items-center justify-between group cursor-pointer rounded",
+                  selectedBranch === branch.name
+                    ? "bg-blue-100 border border-blue-300"
+                    : ""
+                )}
                 onClick={() => handleSelectBranch(branch.name)}
+                tabIndex={0}
+                aria-selected={selectedBranch === branch.name}
               >
                 <div className="flex items-center">
                   <BranchIcon branchName={branch.name} hasRemote={true} className="mr-2" />
                   <span>{branch.name}</span>
                 </div>
+                {selectedBranch === branch.name && (
+                  <span className="ml-2 text-xs text-blue-700 font-semibold">Selected</span>
+                )}
               </li>
             ))}
           </ul>

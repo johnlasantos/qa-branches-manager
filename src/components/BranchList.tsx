@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { AlertTriangle, ArrowLeftRight, Trash2, RefreshCw, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,17 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export interface Branch {
   name: string;
@@ -61,7 +73,7 @@ const BranchList: React.FC<BranchListProps> = ({
   }
 
   return (
-    <div className={cn("w-full h-[calc(100vh-20rem)]", className)}>
+    <div className={cn("w-full h-full", className)}>
       <div className="relative mb-4">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
         <Input
@@ -138,14 +150,35 @@ const BranchList: React.FC<BranchListProps> = ({
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              variant="secondary" 
-                              size="sm"
-                              onClick={() => onDeleteBranch(branch.name)}
-                              className="flex items-center bg-red-50 hover:bg-red-100 border-red-200 text-red-700"
-                            >
-                              <Trash2 size={16} />
-                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="secondary" 
+                                  size="sm"
+                                  className="flex items-center bg-red-50 hover:bg-red-100 border-red-200 text-red-600"
+                                >
+                                  <Trash2 size={16} />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Are you sure you want to delete <span className="font-mono">{branch.name}</span>?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently delete the branch.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => onDeleteBranch(branch.name)}
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>Delete this branch</p>
