@@ -39,17 +39,25 @@ export const useGitOperations = () => {
     }
   };
 
-  const handleSwitchBranch = async (branchName: string) => {
+  // Add a flag to differentiate between "switch" and "import"
+  const handleSwitchBranch = async (branchName: string, opts?: { imported?: boolean }) => {
     setIsLoading(true);
     setGitOutput('');
     try {
       const output = await switchBranch(branchName);
       setGitOutput(output);
       await fetchLocalBranches();
-      // Confirmation notification for branch switch
-      toast.success(`Switched to branch: ${branchName}`, {
-        description: 'Branch change was successful.',
-      });
+      if (opts && opts.imported) {
+        // Import flow
+        toast.success(`Local branch created: ${branchName}`, {
+          description: 'Branch imported from remote successfully.',
+        });
+      } else {
+        // Switch flow
+        toast.success(`Switched to branch: ${branchName}`, {
+          description: 'Branch change was successful.',
+        });
+      }
     } catch (error) {
       toast.error(`Failed to switch to ${branchName}`);
       console.error(error);
@@ -74,6 +82,7 @@ export const useGitOperations = () => {
     }
   };
 
+  // Confirmation notification for successful update
   const handleUpdateCurrentBranch = async () => {
     setIsLoading(true);
     setGitOutput('');
@@ -81,7 +90,6 @@ export const useGitOperations = () => {
       const output = await updateCurrentBranch();
       setGitOutput(output);
       await fetchLocalBranches();
-      // Confirmation notification for successful update
       toast.success('Branch updated successfully', {
         description: 'The current branch has been updated.',
       });
@@ -96,7 +104,6 @@ export const useGitOperations = () => {
   const handleCleanupBranches = async () => {
     setIsLoading(true);
     setGitOutput('');
-    
     try {
       const output = await cleanupBranches();
       setGitOutput(output);
@@ -133,3 +140,4 @@ export const useGitOperations = () => {
     handleSearch,
   };
 };
+

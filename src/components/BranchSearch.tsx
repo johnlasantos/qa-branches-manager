@@ -20,7 +20,8 @@ interface BranchSearchProps {
   remoteBranches: RemoteBranch[];
   localBranches: { name: string }[];
   onSearch: (query: string) => void;
-  onSelectRemoteBranch: (branchName: string) => void;
+  // Change: Accept a more flexible onSelectRemoteBranch signature
+  onSelectRemoteBranch: (branchName: string, opts?: { imported?: boolean }) => void;
   className?: string;
 }
 
@@ -80,7 +81,8 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
   // Import/Create local branch from selected branch
   const handleCheckout = () => {
     if (selectedBranch) {
-      onSelectRemoteBranch(selectedBranch);
+      // Pass opts: imported = true
+      onSelectRemoteBranch(selectedBranch, { imported: true });
       setSearchQuery('');
       setSelectedBranch(null);
       setShowSuggestions(false);
