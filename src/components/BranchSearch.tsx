@@ -24,59 +24,65 @@ interface BranchSearchProps {
   className?: string;
 }
 
-const BranchSearch: React.FC<BranchSearchProps> = ({ 
-  remoteBranches, 
+const BranchSearch: React.FC<BranchSearchProps> = ({
+  remoteBranches,
   localBranches,
-  onSearch, 
+  onSearch,
   onSelectRemoteBranch,
-  className 
+  className,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
-  const [hasSearched, setHasSearched] = useState(false); // New state
-  const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const localBranchNames = new Set(localBranches.map(b => b.name));
   const remoteBranchNames = new Set(remoteBranches.map(b => b.name));
 
-  // Only show suggestions for remote branches that DO NOT have a local branch AND DO NOT have a local with the same name remotely
+  // Only show suggestions for remote branches that do not have a local branch
   const filteredBranches = remoteBranches
     .filter(branch => {
-      // Don't list if local branch exists and also exists remotely (so only list branches that aren't local at all)
-      const isLocalAndRemote = localBranchNames.has(branch.name) && remoteBranchNames.has(branch.name);
       const notInLocal = !localBranchNames.has(branch.name);
       const matchesSearch = branch.name.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesSearch && notInLocal && !isLocalAndRemote;
+      return notInLocal && matchesSearch;
     })
     .slice(0, 10);
 
+  // When focusing the input, show suggestions (with top 10)
+  const handleInputFocus = () => {
+    setShowSuggestions(true);
+    if (!searchQuery) {
+      // Show top 10 if not searching yet
+      setShowSuggestions(true);
+    }
+  };
+
+  // Typing in the input
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
     onSearch(value);
-    setSelectedBranch(null);
-    setHasSearched(true);
-    setShowSuggestions(value.length > 0);
+    setSelectedBranch(null); // Unset selection when changing query
+    setShowSuggestions(true);
   };
 
-  // Row click now always selects
+  // Single-click selection
   const handleSelectBranch = (branchName: string) => {
     setSelectedBranch(branchName);
     setShowSuggestions(true);
+    setSearchQuery(branchName);
     if (inputRef.current) {
       inputRef.current.value = branchName;
     }
   };
 
-  // Explicit checkout
+  // Import/Create local branch from selected branch
   const handleCheckout = () => {
     if (selectedBranch) {
       onSelectRemoteBranch(selectedBranch);
       setSearchQuery('');
       setSelectedBranch(null);
-      setHasSearched(false);
       setShowSuggestions(false);
       if (inputRef.current) {
         inputRef.current.value = '';
@@ -84,27 +90,28 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
     }
   };
 
-  // Always allow deselect on empty input
-  useEffect(() => {
-    if (searchQuery.length === 0) {
-      setSelectedBranch(null);
-      setShowSuggestions(false);
-      setHasSearched(false);
-    }
-  }, [searchQuery]);
-
+  // Hide suggestions if clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Reset if cleared
+  useEffect(() => {
+    if (searchQuery.length === 0) {
+      setSelectedBranch(null);
+      setShowSuggestions(false);
+    }
+  }, [searchQuery]);
+
+  // Only enable import button if a branch from the suggestions is selected
+  const importEnabled = selectedBranch !== null &&
+    filteredBranches.some(branch => branch.name === selectedBranch);
 
   return (
     <div className={cn("search-container", className)} ref={searchRef}>
@@ -117,7 +124,9 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
             placeholder="Search remote branches..."
             value={searchQuery}
             onChange={handleSearchChange}
+            onFocus={handleInputFocus}
             className="pl-9"
+            autoComplete="off"
           />
         </div>
         <TooltipProvider>
@@ -127,7 +136,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
                 <Button
                   onClick={handleCheckout}
                   size="sm"
-                  disabled={!selectedBranch || !hasSearched}
+                  disabled={!importEnabled}
                   className="whitespace-nowrap bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 disabled:opacity-50"
                 >
                   <GitBranch className="mr-2 h-4 w-4" />
@@ -141,13 +150,14 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
           </Tooltip>
         </TooltipProvider>
       </div>
-      
       {showSuggestions && filteredBranches.length > 0 && (
-        <div className="search-results mt-1">
-          <div className="py-1 text-xs text-gray-500 px-3 border-b">Remote branches</div>
+        <div className="search-results mt-1 z-10 absolute w-full bg-white border border-gray-200 rounded shadow-lg">
+          <div className="py-1 text-xs text-gray-500 px-3 border-b">
+            Remote branches
+          </div>
           <ul>
             {filteredBranches.map((branch) => (
-              <li 
+              <li
                 key={branch.name}
                 className={cn(
                   "px-3 py-2 hover:bg-blue-50 flex items-center justify-between group cursor-pointer rounded",
@@ -155,6 +165,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
                     ? "bg-blue-100 border border-blue-300"
                     : ""
                 )}
+                onMouseDown={e => e.preventDefault()} // Prevent input blur
                 onClick={() => handleSelectBranch(branch.name)}
                 tabIndex={0}
                 aria-selected={selectedBranch === branch.name}
@@ -164,7 +175,9 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
                   <span>{branch.name}</span>
                 </div>
                 {selectedBranch === branch.name && (
-                  <span className="ml-2 text-xs text-blue-700 font-semibold">Selected</span>
+                  <span className="ml-2 text-xs text-blue-700 font-semibold">
+                    Selected
+                  </span>
                 )}
               </li>
             ))}
@@ -176,3 +189,4 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
 };
 
 export default BranchSearch;
+

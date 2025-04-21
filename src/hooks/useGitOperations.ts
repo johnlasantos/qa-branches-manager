@@ -42,12 +42,14 @@ export const useGitOperations = () => {
   const handleSwitchBranch = async (branchName: string) => {
     setIsLoading(true);
     setGitOutput('');
-    
     try {
       const output = await switchBranch(branchName);
       setGitOutput(output);
       await fetchLocalBranches();
-      toast.success(`Switched to ${branchName}`);
+      // Confirmation notification for branch switch
+      toast.success(`Switched to branch: ${branchName}`, {
+        description: 'Branch change was successful.',
+      });
     } catch (error) {
       toast.error(`Failed to switch to ${branchName}`);
       console.error(error);
@@ -59,7 +61,6 @@ export const useGitOperations = () => {
   const handleDeleteBranch = async (branchName: string) => {
     setIsLoading(true);
     setGitOutput('');
-    
     try {
       const output = await deleteBranch(branchName);
       setGitOutput(output);
@@ -76,12 +77,14 @@ export const useGitOperations = () => {
   const handleUpdateCurrentBranch = async () => {
     setIsLoading(true);
     setGitOutput('');
-    
     try {
       const output = await updateCurrentBranch();
       setGitOutput(output);
       await fetchLocalBranches();
-      toast.success('Branch updated successfully');
+      // Confirmation notification for successful update
+      toast.success('Branch updated successfully', {
+        description: 'The current branch has been updated.',
+      });
     } catch (error) {
       toast.error('Failed to update branch');
       console.error(error);
