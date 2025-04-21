@@ -264,4 +264,3 @@ const BranchList: React.FC<BranchListProps> = ({
 };
 
 export default BranchList;
-

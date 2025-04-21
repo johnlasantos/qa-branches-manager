@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, GitBranch } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,8 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   AlertDialog,
   AlertDialogTrigger,
   AlertDialogContent,
@@ -18,7 +21,7 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
   AlertDialogAction,
-} from "@/components/ui/tooltip";
+} from "@/components/ui/alert-dialog";
 
 export interface RemoteBranch {
   name: string;
@@ -81,12 +84,6 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
     }
   };
 
-  const handleCheckout = () => {
-    if (selectedBranch) {
-      setShowImportDialog(true);
-    }
-  };
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -130,7 +127,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
                 <AlertDialog open={showImportDialog} onOpenChange={setShowImportDialog}>
                   <AlertDialogTrigger asChild>
                     <Button
-                      onClick={handleCheckout}
+                      onClick={() => setShowImportDialog(true)}
                       size="sm"
                       disabled={!importEnabled}
                       className="whitespace-nowrap bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 disabled:opacity-50"
