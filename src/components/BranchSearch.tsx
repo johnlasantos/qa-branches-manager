@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, GitBranch } from 'lucide-react';
+import { Search, GitBranch, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -108,7 +107,6 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
     <div className={cn("search-container", className)} ref={searchRef}>
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
           <Input
             ref={inputRef}
             type="text"
@@ -116,9 +114,10 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
             value={searchQuery}
             onChange={handleSearchChange}
             onFocus={handleInputFocus}
-            className="pl-9"
+            className="pr-9"
             autoComplete="off"
           />
+          <ChevronDown className="absolute right-2.5 top-2.5 h-4 w-4 text-gray-500" />
         </div>
         <TooltipProvider>
           <Tooltip>
