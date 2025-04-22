@@ -112,7 +112,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
           <Input
             ref={inputRef}
             type="text"
-            placeholder="Search remote branches..."
+            placeholder="Select remote branch"
             value={searchQuery}
             onChange={handleSearchChange}
             onFocus={handleInputFocus}
@@ -133,13 +133,13 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
                       className="whitespace-nowrap bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 disabled:opacity-50"
                     >
                       <GitBranch className="mr-2 h-4 w-4" />
-                      Create local branch
+                      Import local branch
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>
-                        Create a local branch from <span className="font-mono">{selectedBranch}</span>?
+                        Create and change a local branch from <span className="font-mono">{selectedBranch}</span>?
                       </AlertDialogTitle>
                       <AlertDialogDescription>
                         This will create a new local branch from the selected remote branch.
@@ -161,7 +161,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
                           }
                         }}
                       >
-                        Create branch
+                        Import branch
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -169,7 +169,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
               </span>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Create a local branch from the selected remote branch</p>
+              <p>Create and change a local branch from the selected remote branch</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
