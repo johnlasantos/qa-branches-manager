@@ -319,12 +319,12 @@ app.post('/cleanup', async (req, res) => {
     
     console.log('Local branches:', localBranches.map(b => b.name));
     console.log('Remote branches:', remoteBranches);
-    console.log('Stale branches to delete:', staleBranches.map(b => b.name));
+    console.log('Deprecated branches to delete:', staleBranches.map(b => b.name));
     
     if (staleBranches.length === 0) {
       return res.json({ 
         success: true, 
-        message: 'No stale branches to remove.' 
+        message: 'No deprecated branches to remove.' 
       });
     }
     
@@ -354,7 +354,7 @@ app.post('/cleanup', async (req, res) => {
     }
     
     const message = results.length > 0 
-      ? `${results.join('\n')}\n${results.length} stale branches removed.`
+      ? `${results.join('\n')}\n${results.length} deprecated branches removed.`
       : 'No branches were removed.';
     
     res.json({ 
