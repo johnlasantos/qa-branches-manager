@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const { exec } = require('child_process');
@@ -17,7 +16,7 @@ app.use(cors());
 app.use(express.json());
 
 // Load config
-let config = { repositoryPath: '.' };
+let config = { repositoryPath: '.', headerLink: 'http://athena.scriptcase.net:8092/scriptcase-git/' };
 const configPath = path.join(__dirname, 'config.json');
 
 try {
@@ -48,6 +47,20 @@ async function runGitCommand(command) {
     return { success: false, output: '', error: error.message };
   }
 }
+
+// Add this new endpoint before the other routes
+app.get('/config', (req, res) => {
+  try {
+    // Only send safe configuration values to the frontend
+    const safeConfig = {
+      headerLink: config.headerLink || 'http://athena.scriptcase.net:8092/scriptcase-git/'
+    };
+    res.json(safeConfig);
+  } catch (error) {
+    console.error('Error getting config:', error);
+    res.status(500).json({ success: false, message: 'Failed to get configuration' });
+  }
+});
 
 // Endpoints
 

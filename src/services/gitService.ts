@@ -1,4 +1,3 @@
-
 // This service connects to the Git backend API
 
 import { Branch } from "@/components/BranchList";
@@ -28,6 +27,15 @@ const apiRequest = async (endpoint: string, options?: RequestInit) => {
     console.error('API request failed:', error);
     throw error;
   }
+};
+
+export interface Config {
+  headerLink: string;
+}
+
+export const getConfig = async (): Promise<Config> => {
+  const data = await apiRequest('/config');
+  return data;
 };
 
 export const getLocalBranches = async (): Promise<Branch[]> => {

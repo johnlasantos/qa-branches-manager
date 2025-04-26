@@ -1,4 +1,5 @@
 
 {
-  "repositoryPath": "."
+  "repositoryPath": ".",
+  "headerLink": "http://athena.scriptcase.net:8092/scriptcase-git/"
 }
