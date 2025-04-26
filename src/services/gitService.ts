@@ -63,7 +63,9 @@ export const deleteBranch = async (branchName: string): Promise<string> => {
 };
 
 export const updateCurrentBranch = async (): Promise<string> => {
-  const data = await apiRequest('/pull');
+  const data = await apiRequest('/pull', {
+    method: 'POST'
+  });
   return data.message;
 };
 
