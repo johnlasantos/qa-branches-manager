@@ -70,7 +70,15 @@ export const updateCurrentBranch = async (): Promise<string> => {
 };
 
 export const cleanupBranches = async (): Promise<string> => {
-  const data = await apiRequest('/cleanup');
+  const data = await apiRequest('/cleanup', {
+    method: 'POST'
+  });
+  
+  // Handle possible warnings in the response
+  if (data.warnings && data.warnings.length > 0) {
+    console.warn('Cleanup warnings:', data.warnings);
+  }
+  
   return data.message;
 };
 
