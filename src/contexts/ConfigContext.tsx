@@ -46,17 +46,23 @@ export const ConfigProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         
         const data = await response.json();
         
+        // For development mode, if apiBaseUrl is not set, use the proxy
+        let apiBaseUrl = data.apiBaseUrl || '';
+        if (isDev && !apiBaseUrl) {
+          console.log('Development mode: using proxy for API calls');
+        }
+        
         setConfig({
           headerLink: data.headerLink || defaultConfig.headerLink,
           basePath: data.basePath || defaultConfig.basePath,
-          apiBaseUrl: data.apiBaseUrl || defaultConfig.apiBaseUrl,
+          apiBaseUrl: apiBaseUrl,
           isLoaded: true
         });
         
         console.log('Config loaded:', {
           headerLink: data.headerLink,
           basePath: data.basePath,
-          apiBaseUrl: data.apiBaseUrl
+          apiBaseUrl: apiBaseUrl
         });
       } catch (error) {
         console.error('Failed to load configuration:', error);
