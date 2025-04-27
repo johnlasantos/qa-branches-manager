@@ -1,4 +1,3 @@
-
 // This service connects to the Git backend API
 import { Branch } from "@/components/BranchList";
 import { RemoteBranch } from "@/components/BranchSearch";
@@ -8,7 +7,12 @@ const apiRequest = async (endpoint: string, apiBaseUrl: string = '', options?: R
   try {
     // Build the complete URL based on apiBaseUrl
     const baseUrl = apiBaseUrl ? apiBaseUrl.replace(/\/$/, '') : '';
-    const url = `${baseUrl}/api/${endpoint}`;
+    
+    // Check if apiBaseUrl already contains '/api'
+    const url = baseUrl.includes('/api') 
+      ? `${baseUrl}/${endpoint}`  // If it already has /api, don't add it again
+      : `${baseUrl}/api/${endpoint}`; // Otherwise add /api/
+      
     console.log(`Making request to: ${url}`);
     
     const response = await fetch(url, {
