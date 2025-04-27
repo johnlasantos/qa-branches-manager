@@ -2,6 +2,5 @@
 {
   "repositoryPath": ".",
   "headerLink": "https://www.domain.com/project/",
-  "apiBaseUrl": "https://service.domain.com/",
   "basePath": "/"
 }

@@ -1,3 +1,4 @@
+
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
@@ -62,11 +63,12 @@ try {
   );
   console.log('✅ package.json created in dist folder');
 
-  // 6. Create index.html for redirection
+  // 6. Create index.html for redirection using basePath from config.json
+  const config = require(path.resolve(apiDir, 'config.json'));
   const indexHtmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta http-equiv="refresh" content="0; url=manager/" />
+  <meta http-equiv="refresh" content="0; url=${config.basePath}" />
   <title>Redirecting...</title>
 </head>
 <body>

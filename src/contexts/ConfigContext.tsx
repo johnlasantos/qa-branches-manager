@@ -3,7 +3,6 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 
 interface Config {
   headerLink: string;
-  apiBaseUrl: string;
   basePath: string;
   isLoaded: boolean;
 }
@@ -11,7 +10,6 @@ interface Config {
 // Default config for development environment
 const defaultConfig: Config = {
   headerLink: '',
-  apiBaseUrl: '/api/',  // Uses proxy in development
   basePath: '/',
   isLoaded: false
 };
@@ -46,20 +44,14 @@ export const ConfigProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         
         const data = await response.json();
         
-        // Use the API base URL from config in production, 
-        // but keep the proxy URL in development
-        const apiBaseUrl = isDev ? '/api/' : data.apiBaseUrl;
-        
         setConfig({
           headerLink: data.headerLink || defaultConfig.headerLink,
-          apiBaseUrl: apiBaseUrl,
           basePath: data.basePath || defaultConfig.basePath,
           isLoaded: true
         });
         
         console.log('Config loaded:', {
           headerLink: data.headerLink,
-          apiBaseUrl: apiBaseUrl,
           basePath: data.basePath
         });
       } catch (error) {
