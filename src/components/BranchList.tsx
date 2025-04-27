@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { AlertTriangle, ArrowLeftRight, Trash2, RefreshCw, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -52,7 +51,7 @@ const BranchList: React.FC<BranchListProps> = ({
   hasMore = false,
   className,
   isLoading = false,
-  isUpdatingCurrentBranch = false // Default to false
+  isUpdatingCurrentBranch = false
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [switchDialogBranch, setSwitchDialogBranch] = useState<string | null>(null);
@@ -214,49 +213,47 @@ const BranchList: React.FC<BranchListProps> = ({
                     </TooltipProvider>
                   ) : (
                     <>
-                      {/* Delete button now comes first */}
-                      {!branch.hasRemote && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span> {/* Wrap AlertDialog in a span */}
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button 
-                                      variant="secondary" 
-                                      size="sm"
-                                      className="flex items-center bg-red-50 hover:bg-red-100 border-red-200 text-red-600"
+                      {/* Show delete button for all non-current branches */}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    variant="secondary" 
+                                    size="sm"
+                                    className="flex items-center bg-red-50 hover:bg-red-100 border-red-200 text-red-600"
+                                  >
+                                    <Trash2 size={16} />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      Are you sure you want to delete <span className="font-mono">{branch.name}</span>?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This will permanently delete the branch.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => onDeleteBranch(branch.name)}
                                     >
-                                      <Trash2 size={16} />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>
-                                        Are you sure you want to delete <span className="font-mono">{branch.name}</span>?
-                                      </AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        This will permanently delete the branch.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction
-                                        onClick={() => onDeleteBranch(branch.name)}
-                                      >
-                                        Delete
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Delete this branch</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Delete this branch</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                       
                       {/* Switch branch button comes second */}
                       <TooltipProvider>
