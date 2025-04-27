@@ -35,7 +35,7 @@ export const useGitOperations = () => {
       // If reset, start from page 0, otherwise continue with next page
       const page = reset ? 0 : localBranchesPage;
       
-      const response = await getLocalBranches(page, 20, config.apiBaseUrl);
+      const response = await getLocalBranches(page, 20);
       
       if (reset) {
         setLocalBranches(response.branches);
@@ -56,7 +56,7 @@ export const useGitOperations = () => {
       setIsLoading(false);
       return null;
     }
-  }, [localBranchesPage, config.apiBaseUrl]);
+  }, [localBranchesPage]);
 
   const fetchMoreLocalBranches = async () => {
     if (isLoading || !localBranchesHasMore) return;
@@ -71,7 +71,7 @@ export const useGitOperations = () => {
   const fetchRemoteBranches = useCallback(async (reset = true) => {
     try {
       const page = reset ? 0 : remoteBranchesPage;
-      const response = await getRemoteBranches(page, 20, config.apiBaseUrl);
+      const response = await getRemoteBranches(page, 20);
       
       if (reset) {
         setRemoteBranches(response.branches);
@@ -89,7 +89,7 @@ export const useGitOperations = () => {
       console.error(error);
       return null;
     }
-  }, [remoteBranchesPage, config.apiBaseUrl]);
+  }, [remoteBranchesPage]);
 
   const fetchMoreRemoteBranches = async () => {
     if (isLoading || !remoteBranchesHasMore) return;
@@ -111,7 +111,7 @@ export const useGitOperations = () => {
       setLocalBranches(updatedBranches);
       
       // Perform the operation
-      const output = await switchBranch(branchName, config.apiBaseUrl);
+      const output = await switchBranch(branchName);
       setGitOutput(output);
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
@@ -150,7 +150,7 @@ export const useGitOperations = () => {
         prevBranches.filter(branch => branch.name !== branchName)
       );
       
-      const output = await deleteBranch(branchName, config.apiBaseUrl);
+      const output = await deleteBranch(branchName);
       setGitOutput(output);
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
@@ -174,7 +174,7 @@ export const useGitOperations = () => {
     setIsLoading(true);
     setGitOutput('');
     try {
-      const output = await updateCurrentBranch(config.apiBaseUrl);
+      const output = await updateCurrentBranch();
       setGitOutput(output);
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
@@ -199,7 +199,7 @@ export const useGitOperations = () => {
     setIsLoading(true);
     setGitOutput('');
     try {
-      const output = await cleanupBranches(config.apiBaseUrl);
+      const output = await cleanupBranches();
       setGitOutput(output);
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
@@ -227,7 +227,7 @@ export const useGitOperations = () => {
       }
       
       // For actual search queries, use the search endpoint
-      const response = await searchBranches(query, 0, 20, config.apiBaseUrl);
+      const response = await searchBranches(query, 0, 20);
       setRemoteBranches(response.branches);
       setRemoteBranchesHasMore(response.pagination.hasMore);
       setRemoteBranchesTotal(response.pagination.total);
