@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, GitBranch, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import BranchIcon from './BranchIcon';
 import {
@@ -31,6 +33,7 @@ interface BranchSearchProps {
   localBranches: { name: string }[];
   onSearch: (query: string) => void;
   onSelectRemoteBranch: (branchName: string, opts?: { imported?: boolean }) => void;
+  onScrollEnd?: () => void;
   className?: string;
 }
 
@@ -39,6 +42,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
   localBranches,
   onSearch,
   onSelectRemoteBranch,
+  onScrollEnd,
   className,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,6 +51,8 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const observer = useRef<IntersectionObserver | null>(null);
+  const loadingRef = useRef<HTMLDivElement>(null);
 
   const localBranchNames = new Set(localBranches.map(b => b.name));
   const remoteBranchNames = new Set(remoteBranches.map(b => b.name));
@@ -56,8 +62,30 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
       const notInLocal = !localBranchNames.has(branch.name);
       const matchesSearch = branch.name.toLowerCase().includes(searchQuery.toLowerCase());
       return notInLocal && matchesSearch;
-    })
-    .slice(0, 10);
+    });
+
+  // Set up intersection observer for infinite scroll
+  useEffect(() => {
+    if (!onScrollEnd) return;
+
+    observer.current = new IntersectionObserver(entries => {
+      const [entry] = entries;
+      if (entry.isIntersecting && showSuggestions) {
+        onScrollEnd();
+      }
+    }, { threshold: 0.1 });
+
+    const currentLoadingRef = loadingRef.current;
+    if (currentLoadingRef) {
+      observer.current.observe(currentLoadingRef);
+    }
+
+    return () => {
+      if (currentLoadingRef && observer.current) {
+        observer.current.unobserve(currentLoadingRef);
+      }
+    };
+  }, [onScrollEnd, showSuggestions]);
 
   const handleInputFocus = () => {
     setShowSuggestions(true);
@@ -104,7 +132,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
     filteredBranches.some(branch => branch.name === selectedBranch);
 
   return (
-    <div className={cn("search-container", className)} ref={searchRef}>
+    <div className={cn("search-container relative", className)} ref={searchRef}>
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Input
@@ -174,37 +202,43 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
         </TooltipProvider>
       </div>
       {showSuggestions && filteredBranches.length > 0 && (
-        <div className="search-results mt-1 z-10 absolute w-full bg-white border border-gray-200 rounded shadow-lg">
+        <div className="search-results mt-1 z-10 absolute w-full bg-white border border-gray-200 rounded shadow-lg max-h-60">
           <div className="py-1 text-xs text-gray-500 px-3 border-b">
             Remote branches
           </div>
-          <ul>
-            {filteredBranches.map((branch) => (
-              <li
-                key={branch.name}
-                className={cn(
-                  "px-3 py-2 hover:bg-blue-50 flex items-center justify-between group cursor-pointer rounded",
-                  selectedBranch === branch.name
-                    ? "bg-blue-100 border border-blue-300"
-                    : ""
-                )}
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => handleSelectBranch(branch.name)}
-                tabIndex={0}
-                aria-selected={selectedBranch === branch.name}
-              >
-                <div className="flex items-center">
-                  <BranchIcon branchName={branch.name} hasRemote={true} className="mr-2" />
-                  <span>{branch.name}</span>
-                </div>
-                {selectedBranch === branch.name && (
-                  <span className="ml-2 text-xs text-blue-700 font-semibold">
-                    Selected
-                  </span>
-                )}
+          <ScrollArea className="max-h-56">
+            <ul>
+              {filteredBranches.map((branch) => (
+                <li
+                  key={branch.name}
+                  className={cn(
+                    "px-3 py-2 hover:bg-blue-50 flex items-center justify-between group cursor-pointer rounded",
+                    selectedBranch === branch.name
+                      ? "bg-blue-100 border border-blue-300"
+                      : ""
+                  )}
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => handleSelectBranch(branch.name)}
+                  tabIndex={0}
+                  aria-selected={selectedBranch === branch.name}
+                >
+                  <div className="flex items-center">
+                    <BranchIcon branchName={branch.name} hasRemote={true} className="mr-2" />
+                    <span>{branch.name}</span>
+                  </div>
+                  {selectedBranch === branch.name && (
+                    <span className="ml-2 text-xs text-blue-700 font-semibold">
+                      Selected
+                    </span>
+                  )}
+                </li>
+              ))}
+              {/* Loading indicator for infinite scroll */}
+              <li ref={loadingRef} className="py-2 flex justify-center">
+                <div className="h-4"></div> {/* Placeholder to trigger intersection */}
               </li>
-            ))}
-          </ul>
+            </ul>
+          </ScrollArea>
         </div>
       )}
     </div>

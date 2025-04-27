@@ -1,3 +1,4 @@
+
 const express = require('express');
 const cors = require('cors');
 const { exec } = require('child_process');
@@ -16,7 +17,12 @@ app.use(cors());
 app.use(express.json());
 
 // Load config
-let config = { repositoryPath: '.', headerLink: 'http://athena.scriptcase.net:8092/scriptcase-git/' };
+let config = { 
+  repositoryPath: '.',
+  headerLink: 'http://athena.scriptcase.net:8092/scriptcase-git/',
+  apiBaseUrl: 'http://localhost:3001/',
+  basePath: '/'
+};
 const configPath = path.join(__dirname, 'config.json');
 
 try {
@@ -48,12 +54,14 @@ async function runGitCommand(command) {
   }
 }
 
-// Add this new endpoint before the other routes
+// Config endpoint - Return safe configuration values to the frontend
 app.get('/config', (req, res) => {
   try {
     // Only send safe configuration values to the frontend
     const safeConfig = {
-      headerLink: config.headerLink || 'http://athena.scriptcase.net:8092/scriptcase-git/'
+      headerLink: config.headerLink || 'http://athena.scriptcase.net:8092/scriptcase-git/',
+      apiBaseUrl: config.apiBaseUrl || 'http://localhost:3001/',
+      basePath: config.basePath || '/'
     };
     res.json(safeConfig);
   } catch (error) {
@@ -64,21 +72,27 @@ app.get('/config', (req, res) => {
 
 // Endpoints
 
-// Get all local branches
+// Get all local branches with pagination
 app.get('/branches', async (req, res) => {
   try {
+    // Support pagination
+    const page = parseInt(req.query.page) || 0;
+    const limit = parseInt(req.query.limit) || 10;
+    
     // Make sure we have the latest info
     await runGitCommand('git fetch --prune');
     
     const { output } = await runGitCommand('git branch -v');
     const { output: remoteOutput } = await runGitCommand('git branch -r');
 
+    // Get all remote branches
     const remoteBranches = remoteOutput
       .split('\n')
       .filter(Boolean)
       .map(line => line.trim().replace('origin/', ''));
     
-    const branches = output
+    // Get all local branches
+    const allBranches = output
       .split('\n')
       .filter(Boolean)
       .map(line => {
@@ -88,43 +102,82 @@ app.get('/branches', async (req, res) => {
         
         return { name, current: isCurrent, hasRemote };
       });
-
-    res.json(branches);
+    
+    // Get total count for pagination info
+    const total = allBranches.length;
+    
+    // Paginate the results
+    const paginatedBranches = allBranches.slice(page * limit, (page + 1) * limit);
+    
+    // Return with pagination metadata
+    res.json({
+      branches: paginatedBranches,
+      pagination: {
+        page,
+        limit,
+        total,
+        hasMore: (page + 1) * limit < total
+      }
+    });
   } catch (error) {
     console.error('Error getting branches:', error);
     res.status(500).json({ success: false, message: 'Failed to get branches' });
   }
 });
 
-// Get all remote branches
+// Get all remote branches with pagination
 app.get('/remote-branches', async (req, res) => {
   try {
+    // Support pagination
+    const page = parseInt(req.query.page) || 0;
+    const limit = parseInt(req.query.limit) || 10;
+    
     // Fetch to ensure we have the latest remote branches
     await runGitCommand('git fetch --prune');
     const { output } = await runGitCommand('git branch -r');
     
-    const branches = output
+    // Get all remote branches
+    const allBranches = output
       .split('\n')
       .filter(Boolean)
       .map(line => {
         const name = line.trim().replace('origin/', '');
         return { name };
       });
-
-    res.json(branches);
+    
+    // Get total count for pagination info
+    const total = allBranches.length;
+    
+    // Paginate the results
+    const paginatedBranches = allBranches.slice(page * limit, (page + 1) * limit);
+    
+    // Return with pagination metadata
+    res.json({
+      branches: paginatedBranches,
+      pagination: {
+        page,
+        limit,
+        total,
+        hasMore: (page + 1) * limit < total
+      }
+    });
   } catch (error) {
     console.error('Error getting remote branches:', error);
     res.status(500).json({ success: false, message: 'Failed to get remote branches' });
   }
 });
 
-// Search remote branches
+// Search remote branches with pagination
 app.get('/remote-branches/search', async (req, res) => {
   try {
     const query = req.query.q || '';
+    const page = parseInt(req.query.page) || 0;
+    const limit = parseInt(req.query.limit) || 10;
+    
     const { output } = await runGitCommand('git branch -r');
     
-    const branches = output
+    // Filter branches by search query
+    const allMatchingBranches = output
       .split('\n')
       .filter(Boolean)
       .map(line => {
@@ -132,8 +185,23 @@ app.get('/remote-branches/search', async (req, res) => {
         return { name };
       })
       .filter(branch => branch.name.toLowerCase().includes(query.toLowerCase()));
-
-    res.json(branches.slice(0, 10)); // Limit to 10 results like the frontend
+    
+    // Get total count for pagination info
+    const total = allMatchingBranches.length;
+    
+    // Paginate the results
+    const paginatedBranches = allMatchingBranches.slice(page * limit, (page + 1) * limit);
+    
+    // Return with pagination metadata
+    res.json({
+      branches: paginatedBranches,
+      pagination: {
+        page,
+        limit,
+        total,
+        hasMore: (page + 1) * limit < total
+      }
+    });
   } catch (error) {
     console.error('Error searching branches:', error);
     res.status(500).json({ success: false, message: 'Failed to search branches' });
@@ -392,4 +460,6 @@ app.get('/status', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Git Branch Manager Backend running on port ${PORT}`);
   console.log(`Using repository at: ${path.resolve(config.repositoryPath)}`);
+  console.log(`API Base URL: ${config.apiBaseUrl}`);
+  console.log(`Base Path: ${config.basePath}`);
 });

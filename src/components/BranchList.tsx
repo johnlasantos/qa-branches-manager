@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { AlertTriangle, ArrowLeftRight, Trash2, RefreshCw, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import BranchIcon from './BranchIcon';
 import { cn } from '@/lib/utils';
 import {
@@ -33,6 +35,8 @@ interface BranchListProps {
   onSwitchBranch: (branchName: string) => void;
   onDeleteBranch: (branchName: string) => void;
   onUpdateCurrentBranch: () => void;
+  onScrollEnd?: () => void;
+  hasMore?: boolean;
   className?: string;
   isLoading?: boolean;
 }
@@ -42,21 +46,50 @@ const BranchList: React.FC<BranchListProps> = ({
   onSwitchBranch, 
   onDeleteBranch,
   onUpdateCurrentBranch,
+  onScrollEnd,
+  hasMore = false,
   className,
   isLoading = false
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  // Local state to track which "switch" or "update" dialog should open
   const [switchDialogBranch, setSwitchDialogBranch] = useState<string | null>(null);
   const [showUpdateDialog, setShowUpdateDialog] = useState<boolean>(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const observer = useRef<IntersectionObserver | null>(null);
+  const loadingRef = useRef<HTMLDivElement>(null);
 
+  // Filter branches by search query
   const filteredBranches = branches.filter(branch =>
     branch.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (isLoading) {
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    // If there's no more data to load or no scroll end handler, don't set up observer
+    if (!hasMore || !onScrollEnd) return;
+
+    observer.current = new IntersectionObserver(entries => {
+      const [entry] = entries;
+      if (entry.isIntersecting && hasMore && !isLoading) {
+        onScrollEnd();
+      }
+    }, { threshold: 0.5 });
+
+    const currentLoadingRef = loadingRef.current;
+    if (currentLoadingRef) {
+      observer.current.observe(currentLoadingRef);
+    }
+
+    return () => {
+      if (currentLoadingRef && observer.current) {
+        observer.current.unobserve(currentLoadingRef);
+      }
+    };
+  }, [hasMore, onScrollEnd, isLoading]);
+
+  if (isLoading && branches.length === 0) {
     return (
-      <div className={cn("w-full h-[calc(100vh-20rem)]", className)}>
+      <div className={cn("w-full h-96", className)}>
         <div className="animate-pulse space-y-3">
           {[1, 2, 3, 4, 5].map((item) => (
             <div key={item} className="h-14 bg-gray-200 rounded"></div>
@@ -66,7 +99,7 @@ const BranchList: React.FC<BranchListProps> = ({
     );
   }
 
-  if (branches.length === 0) {
+  if (branches.length === 0 && !isLoading) {
     return (
       <div className={cn("w-full p-4 text-center text-gray-500", className)}>
         No branches found
@@ -87,153 +120,65 @@ const BranchList: React.FC<BranchListProps> = ({
         />
       </div>
 
-      <ul className="space-y-2">
-        {filteredBranches.map((branch) => (
-          <li 
-            key={branch.name}
-            className={cn(
-              "branch-item p-3 rounded-md border", 
-              branch.isCurrent ? "branch-current" : "border-gray-200"
-            )}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <BranchIcon branchName={branch.name} hasRemote={branch.hasRemote} />
-                <span className={cn(
-                  "font-medium", 
-                  branch.isCurrent ? "font-semibold" : "",
-                  !branch.hasRemote ? "line-through text-gray-500" : ""
-                )}>
-                  {branch.name}
-                  {branch.isCurrent && <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">current</span>}
-                </span>
-              </div>
-              
-              <div className="flex space-x-2">
-                {branch.isCurrent ? (
-                  // === UPDATE BRANCH BUTTON WITH CONFIRMATION ===
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div>
-                          <AlertDialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                size="sm" 
-                                onClick={() => setShowUpdateDialog(true)}
-                                variant="secondary"
-                                className="flex items-center bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
-                              >
-                                <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Update current branch?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will fetch and update the current branch from its remote counterpart.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => {
-                                    setShowUpdateDialog(false);
-                                    onUpdateCurrentBranch();
-                                  }}
-                                >
-                                  Update
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Update this branch</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ) : (
-                  <>
-                    {/* Delete button now comes first */}
-                    {!branch.hasRemote && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button 
-                                  variant="secondary" 
-                                  size="sm"
-                                  className="flex items-center bg-red-50 hover:bg-red-100 border-red-200 text-red-600"
-                                >
-                                  <Trash2 size={16} />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>
-                                    Are you sure you want to delete <span className="font-mono">{branch.name}</span>?
-                                  </AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This will permanently delete the branch.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => onDeleteBranch(branch.name)}
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Delete this branch</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
-                    
-                    {/* Switch branch button comes second */}
+      <ScrollArea className="h-[calc(100vh-22rem)] pr-4">
+        <div ref={scrollRef} className="space-y-2">
+          {filteredBranches.map((branch) => (
+            <div 
+              key={branch.name}
+              className={cn(
+                "branch-item p-3 rounded-md border", 
+                branch.isCurrent ? "branch-current" : "border-gray-200"
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <BranchIcon branchName={branch.name} hasRemote={branch.hasRemote} />
+                  <span className={cn(
+                    "font-medium", 
+                    branch.isCurrent ? "font-semibold" : "",
+                    !branch.hasRemote ? "line-through text-gray-500" : ""
+                  )}>
+                    {branch.name}
+                    {branch.isCurrent && <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">current</span>}
+                  </span>
+                </div>
+                
+                <div className="flex space-x-2">
+                  {branch.isCurrent ? (
+                    // === UPDATE BRANCH BUTTON WITH CONFIRMATION ===
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div>
-                            <AlertDialog open={switchDialogBranch === branch.name} onOpenChange={(open) => setSwitchDialogBranch(open ? branch.name : null)}>
+                            <AlertDialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
                               <AlertDialogTrigger asChild>
                                 <Button 
-                                  variant="secondary" 
                                   size="sm" 
-                                  onClick={() => setSwitchDialogBranch(branch.name)}
-                                  className="flex items-center bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+                                  onClick={() => setShowUpdateDialog(true)}
+                                  variant="secondary"
+                                  className="flex items-center bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
                                 >
-                                  <ArrowLeftRight size={16} />
+                                  <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>
-                                    Switch to branch <span className="font-mono">{branch.name}</span>?
+                                    Update current branch?
                                   </AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    You will switch your working directory to this branch.
+                                    This will fetch and update the current branch from its remote counterpart.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                                   <AlertDialogAction
                                     onClick={() => {
-                                      setSwitchDialogBranch(null);
-                                      onSwitchBranch(branch.name);
+                                      setShowUpdateDialog(false);
+                                      onUpdateCurrentBranch();
                                     }}
                                   >
-                                    Switch
+                                    Update
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
@@ -241,24 +186,125 @@ const BranchList: React.FC<BranchListProps> = ({
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Change to this branch</p>
+                          <p>Update this branch</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                  </>
-                )}
+                  ) : (
+                    <>
+                      {/* Delete button now comes first */}
+                      {!branch.hasRemote && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    variant="secondary" 
+                                    size="sm"
+                                    className="flex items-center bg-red-50 hover:bg-red-100 border-red-200 text-red-600"
+                                  >
+                                    <Trash2 size={16} />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      Are you sure you want to delete <span className="font-mono">{branch.name}</span>?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This will permanently delete the branch.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => onDeleteBranch(branch.name)}
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Delete this branch</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                      
+                      {/* Switch branch button comes second */}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <AlertDialog open={switchDialogBranch === branch.name} onOpenChange={(open) => setSwitchDialogBranch(open ? branch.name : null)}>
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    variant="secondary" 
+                                    size="sm" 
+                                    onClick={() => setSwitchDialogBranch(branch.name)}
+                                    className="flex items-center bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+                                  >
+                                    <ArrowLeftRight size={16} />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      Switch to branch <span className="font-mono">{branch.name}</span>?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      You will switch your working directory to this branch.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => {
+                                        setSwitchDialogBranch(null);
+                                        onSwitchBranch(branch.name);
+                                      }}
+                                    >
+                                      Switch
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Change to this branch</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </>
+                  )}
+                </div>
               </div>
+              
+              {!branch.hasRemote && (
+                <div className="mt-2 flex items-center text-xs text-amber-600">
+                  <AlertTriangle size={14} className="mr-1" />
+                  <span>This branch no longer exists on the remote.</span>
+                </div>
+              )}
             </div>
-            
-            {!branch.hasRemote && (
-              <div className="mt-2 flex items-center text-xs text-amber-600">
-                <AlertTriangle size={14} className="mr-1" />
-                <span>This branch no longer exists on the remote.</span>
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
+          ))}
+          
+          {/* Loading indicator for infinite scroll */}
+          {hasMore && (
+            <div ref={loadingRef} className="py-4 flex justify-center">
+              {isLoading ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
+              ) : (
+                <div className="h-5 w-5"></div> // Placeholder to trigger intersection
+              )}
+            </div>
+          )}
+        </div>
+      </ScrollArea>
     </div>
   );
 };

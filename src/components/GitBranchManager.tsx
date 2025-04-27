@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import GitHeader from '@/components/GitHeader';
@@ -6,26 +7,34 @@ import BranchSearch from '@/components/BranchSearch';
 import GitOutput from '@/components/GitOutput';
 import BranchCleanupButton from './BranchCleanupButton';
 import { useGitOperations } from '@/hooks/useGitOperations';
+import { useConfig } from '@/contexts/ConfigContext';
 
 const GitBranchManager: React.FC = () => {
+  const { config } = useConfig();
   const {
     localBranches,
     remoteBranches,
     gitOutput,
     isLoading,
     fetchLocalBranches,
+    fetchMoreLocalBranches,
     fetchRemoteBranches,
+    fetchMoreRemoteBranches,
     handleSwitchBranch,
     handleDeleteBranch,
     handleUpdateCurrentBranch,
     handleCleanupBranches,
     handleSearch,
+    localBranchesHasMore,
   } = useGitOperations();
 
   useEffect(() => {
-    fetchLocalBranches();
-    fetchRemoteBranches();
-  }, []);
+    // Only fetch data if configuration is loaded
+    if (config.isLoaded) {
+      fetchLocalBranches();
+      fetchRemoteBranches();
+    }
+  }, [config.isLoaded]);
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl">
@@ -37,6 +46,7 @@ const GitBranchManager: React.FC = () => {
           localBranches={localBranches}
           onSearch={handleSearch}
           onSelectRemoteBranch={handleSwitchBranch}
+          onScrollEnd={fetchMoreRemoteBranches}
         />
       </div>
       
@@ -55,6 +65,8 @@ const GitBranchManager: React.FC = () => {
             onDeleteBranch={handleDeleteBranch}
             onUpdateCurrentBranch={handleUpdateCurrentBranch}
             isLoading={isLoading}
+            onScrollEnd={fetchMoreLocalBranches}
+            hasMore={localBranchesHasMore}
           />
         </div>
         
