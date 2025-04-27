@@ -30,7 +30,6 @@ const GitBranchManager: React.FC = () => {
     localBranchesHasMore,
   } = useGitOperations();
   
-  // Add a state to track if we're specifically updating the current branch
   const [isUpdatingCurrentBranch, setIsUpdatingCurrentBranch] = useState(false);
 
   useEffect(() => {

@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Branch } from '@/components/BranchList';
@@ -46,13 +47,13 @@ export const useGitOperations = () => {
       setLocalBranchesHasMore(response.pagination.hasMore);
       setLocalBranchesTotal(response.pagination.total);
       
+      setIsLoading(false);
       return response;
     } catch (error) {
       toast.error('Failed to load local branches');
       console.error(error);
-      return null;
-    } finally {
       setIsLoading(false);
+      return null;
     }
   }, [localBranchesPage, config.apiBaseUrl]);
 
@@ -94,6 +95,14 @@ export const useGitOperations = () => {
     setGitOutput('');
     
     try {
+      // Optimistically update UI before API call completes
+      const updatedBranches = localBranches.map(branch => ({
+        ...branch,
+        isCurrent: branch.name === branchName
+      }));
+      
+      setLocalBranches(updatedBranches);
+      
       const output = await switchBranch(branchName, config.apiBaseUrl);
       setGitOutput(output);
       
@@ -107,22 +116,17 @@ export const useGitOperations = () => {
         });
       }
       
-      const updatedBranches = localBranches.map(branch => ({
-        ...branch,
-        isCurrent: branch.name === branchName
-      }));
+      setIsLoading(false);
       
-      setLocalBranches(updatedBranches);
-      
+      // Refresh local branches in the background
       setTimeout(() => {
         fetchLocalBranches(true);
       }, 100);
     } catch (error) {
       toast.error(`Failed to switch to ${branchName}`);
       console.error(error);
-      fetchLocalBranches(true);
-    } finally {
       setIsLoading(false);
+      fetchLocalBranches(true);
     }
   };
 
@@ -131,24 +135,26 @@ export const useGitOperations = () => {
     setGitOutput('');
     
     try {
-      const output = await deleteBranch(branchName, config.apiBaseUrl);
-      setGitOutput(output);
-      
+      // Optimistically remove the branch from UI
       setLocalBranches(prevBranches => 
         prevBranches.filter(branch => branch.name !== branchName)
       );
       
-      toast.success(`Deleted ${branchName}`);
+      const output = await deleteBranch(branchName, config.apiBaseUrl);
+      setGitOutput(output);
       
+      toast.success(`Deleted ${branchName}`);
+      setIsLoading(false);
+      
+      // Refresh local branches in the background
       setTimeout(() => {
         fetchLocalBranches(true);
       }, 100);
     } catch (error) {
       toast.error(`Failed to delete ${branchName}`);
       console.error(error);
-      fetchLocalBranches(true);
-    } finally {
       setIsLoading(false);
+      fetchLocalBranches(true);
     }
   };
 
@@ -163,13 +169,15 @@ export const useGitOperations = () => {
         description: 'The current branch has been updated.',
       });
       
+      setIsLoading(false);
+      
+      // Refresh local branches in the background
       setTimeout(() => {
         fetchLocalBranches(true);
       }, 100);
     } catch (error) {
       toast.error('Failed to update branch');
       console.error(error);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -183,29 +191,35 @@ export const useGitOperations = () => {
       
       toast.success('Stale branches removed');
       
+      setIsLoading(false);
+      
+      // Refresh local branches in the background
       setTimeout(() => {
         fetchLocalBranches(true);
       }, 100);
     } catch (error) {
       toast.error('Failed to clean up branches');
       console.error(error);
-    } finally {
       setIsLoading(false);
     }
   };
 
   const handleSearch = async (query: string) => {
     try {
-      setIsLoading(true);
-      const response = await searchBranches(query, 0, 10, config.apiBaseUrl);
+      if (query.trim() === '') {
+        // If query is empty, fetch first page of remote branches
+        fetchRemoteBranches(true);
+        return;
+      }
+      
+      // For actual search queries, use the search endpoint
+      const response = await searchBranches(query, 0, 20, config.apiBaseUrl);
       setRemoteBranches(response.branches);
       setRemoteBranchesHasMore(response.pagination.hasMore);
       setRemoteBranchesTotal(response.pagination.total);
       setRemoteBranchesPage(1);
     } catch (error) {
       console.error(error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
