@@ -106,7 +106,7 @@ export const useGitOperations = () => {
       const output = await switchBranch(branchName, config.apiBaseUrl);
       setGitOutput(output);
       
-      // Important: Set loading to false immediately after the operation completes
+      // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
       
       if (opts && opts.imported) {
@@ -145,7 +145,7 @@ export const useGitOperations = () => {
       const output = await deleteBranch(branchName, config.apiBaseUrl);
       setGitOutput(output);
       
-      // Important: Set loading to false immediately after the operation completes
+      // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
       toast.success(`Deleted ${branchName}`);
       
@@ -169,7 +169,7 @@ export const useGitOperations = () => {
       const output = await updateCurrentBranch(config.apiBaseUrl);
       setGitOutput(output);
       
-      // Important: Set loading to false immediately after the operation completes
+      // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
       toast.success('Branch updated successfully', {
         description: 'The current branch has been updated.',
@@ -194,7 +194,7 @@ export const useGitOperations = () => {
       const output = await cleanupBranches(config.apiBaseUrl);
       setGitOutput(output);
       
-      // Important: Set loading to false immediately after the operation completes
+      // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
       toast.success('Stale branches removed');
       

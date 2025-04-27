@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, GitBranch, ChevronDown, Loader } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -210,8 +211,14 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
           className="search-results mt-1 absolute left-0 bg-white border border-gray-200 rounded shadow-lg z-50" 
           style={{ width: inputRef.current?.offsetWidth }}
         >
-          <div className="py-1 text-xs text-gray-500 px-3 border-b">
-            Remote branches {filteredBranches.length > 0 && `(${filteredBranches.length})`}
+          <div className="py-1 text-xs text-gray-500 px-3 border-b flex items-center">
+            <span>Remote branches</span>
+            {filteredBranches.length > 0 && (
+              <span className="ml-1">({filteredBranches.length})</span>
+            )}
+            {isLoadingMore && (
+              <Loader className="h-3 w-3 text-blue-500 animate-spin ml-2" />
+            )}
           </div>
           <ScrollArea className="relative overflow-auto max-h-56">
             <ul>
@@ -240,15 +247,8 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
                   )}
                 </li>
               ))}
-              <li ref={loadingRef} className="py-2 flex justify-center">
-                {isLoadingMore ? (
-                  <div className="flex items-center justify-center py-1">
-                    <Loader className="h-4 w-4 text-blue-500 animate-spin mr-2" />
-                    <span className="text-xs text-gray-500">Loading more branches...</span>
-                  </div>
-                ) : (
-                  <div className="h-4"></div>
-                )}
+              <li ref={loadingRef} className="h-4">
+                {/* Empty element for intersection observer */}
               </li>
             </ul>
           </ScrollArea>
