@@ -1,4 +1,3 @@
-
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -20,8 +19,8 @@ export default defineConfig(({ mode }) => ({
     }
   },
   build: {
-    // Output to dist/public for unified build
-    outDir: 'dist/public',
+    // Output to dist/manager for unified build
+    outDir: 'dist/manager',
     emptyOutDir: true
   },
   plugins: [

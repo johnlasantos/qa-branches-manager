@@ -5,7 +5,7 @@ const path = require('path');
 
 // Configuration
 const distDir = path.resolve(__dirname, 'dist');
-const publicDir = path.resolve(distDir, 'public');
+const managerDir = path.resolve(distDir, 'manager');
 const apiDir = path.resolve(__dirname, 'api');
 
 console.log('🚀 Starting unified build process...');
@@ -17,7 +17,7 @@ if (!fs.existsSync(distDir)) {
 }
 
 try {
-  // 1. Build the frontend
+  // 1. Build the frontend (now outputs to dist/manager)
   console.log('🛠️ Building frontend...');
   execSync('npm run build', { stdio: 'inherit' });
   console.log('✅ Frontend built successfully!');

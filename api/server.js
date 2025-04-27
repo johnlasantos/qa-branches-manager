@@ -59,11 +59,11 @@ async function runGitCommand(command) {
   }
 }
 
-// If in production mode, serve static files from the public directory
+// If in production mode, serve static files from the manager directory
 if (isProduction) {
-  const publicPath = path.join(__dirname, 'public');
-  console.log(`Serving static files from: ${publicPath}`);
-  app.use(express.static(publicPath));
+  const managerPath = path.join(__dirname, 'manager');
+  console.log(`Serving static files from: ${managerPath}`);
+  app.use(express.static(managerPath));
   
   // Explicitly serve the config.json file for the frontend to fetch
   app.get('/config.json', (req, res) => {
