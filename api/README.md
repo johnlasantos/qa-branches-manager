@@ -13,7 +13,7 @@ This is the backend for the Git Branch Manager application. It provides a REST A
 1. Install dependencies:
 
 ```bash
-cd backend
+cd api
 npm install
 ```
 
