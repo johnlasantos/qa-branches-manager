@@ -1,3 +1,4 @@
+
 # Welcome to your Lovable project
 
 ## Project info
@@ -5,8 +6,6 @@
 **URL**: https://lovable.dev/projects/0499bb2d-ec14-4f53-8345-7030df67e79d
 
 ## How can I edit this code?
-
-There are several ways of editing your application.
 
 **Use Lovable**
 
@@ -32,8 +31,15 @@ cd <YOUR_PROJECT_NAME>
 # Step 3: Install the necessary dependencies.
 npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+# Step 4: Build the unified package
+node build.cjs
+
+# Step 5: Navigate to the dist directory and install dependencies
+cd dist
+npm install
+
+# Step 6: Start the server
+npm start
 ```
 
 **Edit a file directly in GitHub**

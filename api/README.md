@@ -27,7 +27,21 @@ Edit the `config.json` file and set the `repositoryPath` to the absolute path of
 }
 ```
 
-3. Start the server:
+3. Build the unified package:
+
+```bash
+cd ..
+node build.cjs
+```
+
+4. Navigate to the dist directory and install dependencies:
+
+```bash
+cd dist
+npm install
+```
+
+5. Start the server:
 
 ```bash
 npm start
@@ -63,4 +77,3 @@ VITE_API_BASE_URL=http://localhost:3001
 - If you get errors about the repository path not being found, make sure the path in `config.json` is correct and the directory exists.
 - Make sure the user running the Node.js process has read/write access to the Git repository.
 - If you get CORS errors, verify that the frontend URL is correctly accessing the backend.
-
