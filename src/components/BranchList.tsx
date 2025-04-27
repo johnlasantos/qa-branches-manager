@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { AlertTriangle, ArrowLeftRight, Trash2, RefreshCw, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -43,7 +42,7 @@ interface BranchListProps {
 }
 
 const BranchList: React.FC<BranchListProps> = ({ 
-  branches, 
+  branches: unsortedBranches, 
   onSwitchBranch, 
   onDeleteBranch,
   onUpdateCurrentBranch,
@@ -58,6 +57,19 @@ const BranchList: React.FC<BranchListProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
   const loadingRef = useRef<HTMLDivElement>(null);
+
+  // Sort branches with main, master, staging at the top
+  const sortBranches = (branches: Branch[]) => {
+    const orderMap = { main: 0, master: 1, staging: 2 };
+    return [...branches].sort((a, b) => {
+      const aOrder = orderMap[a.name as keyof typeof orderMap] ?? 999;
+      const bOrder = orderMap[b.name as keyof typeof orderMap] ?? 999;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      return a.name.localeCompare(b.name);
+    });
+  };
+
+  const branches = sortBranches(unsortedBranches);
 
   // Normalize branch data to handle both "isCurrent" and "current" fields
   const normalizedBranches = branches.map(branch => ({
@@ -123,11 +135,11 @@ const BranchList: React.FC<BranchListProps> = ({
           placeholder="Search local branches..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
+          className="pl-9 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:border-primary"
         />
       </div>
 
-      <ScrollArea className="h-[calc(100vh-22rem)] pr-4">
+      <ScrollArea className="h-[calc(100vh-22rem)]">
         <div ref={scrollRef} className="space-y-2">
           {filteredBranches.map((branch) => (
             <div 

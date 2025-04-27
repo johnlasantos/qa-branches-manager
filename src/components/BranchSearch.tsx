@@ -130,7 +130,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
     filteredBranches.some(branch => branch.name === selectedBranch);
 
   return (
-    <div className={cn("search-container relative", className)} ref={searchRef}>
+    <div className={cn("relative", className)} ref={searchRef}>
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Input
@@ -140,7 +140,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
             value={searchQuery}
             onChange={handleSearchChange}
             onFocus={handleInputFocus}
-            className="pr-9"
+            className="pr-9 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:border-primary"
             autoComplete="off"
           />
           <ChevronDown className="absolute right-2.5 top-2.5 h-4 w-4 text-gray-500" />
@@ -200,7 +200,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
         </TooltipProvider>
       </div>
       {showSuggestions && filteredBranches.length > 0 && (
-        <div className="search-results mt-1 z-10 absolute w-full bg-white border border-gray-200 rounded shadow-lg max-h-60">
+        <div className="search-results mt-1 absolute w-full bg-white border border-gray-200 rounded shadow-lg">
           <div className="py-1 text-xs text-gray-500 px-3 border-b">
             Remote branches
           </div>
