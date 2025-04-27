@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, GitBranch, ChevronDown, Loader } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -69,6 +68,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
       return notInLocal && notSymbolicRef && matchesSearch;
     });
 
+  // Effect to handle loading more branches with proper spinner timing
   useEffect(() => {
     if (!onScrollEnd) return;
 
@@ -76,10 +76,11 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
       const [entry] = entries;
       if (entry.isIntersecting && showSuggestions) {
         setIsLoadingMore(true);
+        
+        // Call onScrollEnd and keep loading indicator visible until data arrives
         onScrollEnd();
-        setTimeout(() => {
-          setIsLoadingMore(false);
-        }, 800);
+        
+        // We'll set isLoadingMore to false when remoteBranches changes
       }
     }, { threshold: 0.1 });
 
@@ -94,6 +95,19 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
       }
     };
   }, [onScrollEnd, showSuggestions]);
+  
+  // Effect to turn off loading state when new branches arrive
+  useEffect(() => {
+    // When remoteBranches change, we can assume loading has completed
+    if (isLoadingMore) {
+      // Add a small delay to ensure UI updates smoothly
+      const timer = setTimeout(() => {
+        setIsLoadingMore(false);
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [remoteBranches.length]);
 
   const handleInputFocus = () => {
     setShowSuggestions(true);
@@ -156,7 +170,12 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <span>
-                <AlertDialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+                <AlertDialog 
+                  open={showImportDialog} 
+                  onOpenChange={(isOpen) => {
+                    setShowImportDialog(isOpen);
+                  }}
+                >
                   <AlertDialogTrigger asChild>
                     <Button
                       onClick={() => setShowImportDialog(true)}

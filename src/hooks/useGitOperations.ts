@@ -26,6 +26,7 @@ export const useGitOperations = () => {
   const [remoteBranchesHasMore, setRemoteBranchesHasMore] = useState<boolean>(true);
   const [localBranchesTotal, setLocalBranchesTotal] = useState<number>(0);
   const [remoteBranchesTotal, setRemoteBranchesTotal] = useState<number>(0);
+  const [reloadTrigger, setReloadTrigger] = useState<number>(0);
 
   const fetchLocalBranches = useCallback(async (reset = true) => {
     try {
@@ -62,6 +63,11 @@ export const useGitOperations = () => {
     await fetchLocalBranches(false);
   };
 
+  const triggerReloadLocalBranches = () => {
+    setReloadTrigger(prev => prev + 1);
+    fetchLocalBranches(true);
+  };
+
   const fetchRemoteBranches = useCallback(async (reset = true) => {
     try {
       const page = reset ? 0 : remoteBranchesPage;
@@ -91,6 +97,7 @@ export const useGitOperations = () => {
   };
 
   const handleSwitchBranch = async (branchName: string, opts?: { imported?: boolean }) => {
+    // Set loading state before operation
     setIsLoading(true);
     setGitOutput('');
     
@@ -103,6 +110,7 @@ export const useGitOperations = () => {
       
       setLocalBranches(updatedBranches);
       
+      // Perform the operation
       const output = await switchBranch(branchName, config.apiBaseUrl);
       setGitOutput(output);
       
@@ -247,5 +255,7 @@ export const useGitOperations = () => {
     remoteBranchesHasMore,
     localBranchesTotal,
     remoteBranchesTotal,
+    triggerReloadLocalBranches,
+    reloadTrigger
   };
 };

@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { AlertTriangle, ArrowLeftRight, Trash2, RefreshCw, Search } from 'lucide-react';
+import { AlertTriangle, ArrowLeftRight, Trash2, RefreshCw, Search, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -40,6 +41,7 @@ interface BranchListProps {
   className?: string;
   isLoading?: boolean;
   isUpdatingCurrentBranch?: boolean; // New prop for tracking current branch updates specifically
+  onReloadLocalBranches?: () => void; // New prop for reloading branches
 }
 
 const BranchList: React.FC<BranchListProps> = ({ 
@@ -51,7 +53,8 @@ const BranchList: React.FC<BranchListProps> = ({
   hasMore = false,
   className,
   isLoading = false,
-  isUpdatingCurrentBranch = false
+  isUpdatingCurrentBranch = false,
+  onReloadLocalBranches
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [switchDialogBranch, setSwitchDialogBranch] = useState<string | null>(null);
@@ -130,15 +133,40 @@ const BranchList: React.FC<BranchListProps> = ({
 
   return (
     <div className={cn("w-full h-full", className)}>
-      <div className="relative mb-4">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-        <Input
-          type="text"
-          placeholder="Search local branches..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-input"
-        />
+      <div className="flex items-center justify-between mb-4">
+        <div className="relative flex-1 mr-2">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <Input
+            type="text"
+            placeholder="Search local branches..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-input"
+          />
+        </div>
+        
+        {/* Add reload button for local branches */}
+        {onReloadLocalBranches && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => {
+                    if (onReloadLocalBranches) onReloadLocalBranches();
+                  }}
+                  className="shrink-0"
+                >
+                  <RefreshCcw className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Reload local branches</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </div>
 
       <ScrollArea className="h-[calc(100vh-22rem)]">
@@ -148,7 +176,9 @@ const BranchList: React.FC<BranchListProps> = ({
               key={branch.name}
               className={cn(
                 "branch-item p-3 rounded-md border", 
-                branch.isCurrent ? "branch-current border-green-300 bg-green-50" : "border-gray-200"
+                branch.isCurrent 
+                  ? "border-green-300 bg-green-50 hover:bg-green-100" // Keep green on hover for current branch
+                  : "border-gray-200 hover:bg-gray-50"
               )}
             >
               <div className="flex items-center justify-between">
@@ -171,7 +201,9 @@ const BranchList: React.FC<BranchListProps> = ({
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <span> {/* Wrap the AlertDialog in a span instead of div */}
-                            <AlertDialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
+                            <AlertDialog open={showUpdateDialog} onOpenChange={(isOpen) => {
+                              setShowUpdateDialog(isOpen);
+                            }}>
                               <AlertDialogTrigger asChild>
                                 <Button 
                                   size="sm" 
@@ -260,7 +292,9 @@ const BranchList: React.FC<BranchListProps> = ({
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <span> {/* Wrap AlertDialog in a span */}
-                              <AlertDialog open={switchDialogBranch === branch.name} onOpenChange={(open) => setSwitchDialogBranch(open ? branch.name : null)}>
+                              <AlertDialog open={switchDialogBranch === branch.name} onOpenChange={(isOpen) => {
+                                setSwitchDialogBranch(isOpen ? branch.name : null);
+                              }}>
                                 <AlertDialogTrigger asChild>
                                   <Button 
                                     variant="secondary" 

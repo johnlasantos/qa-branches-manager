@@ -28,6 +28,7 @@ const GitBranchManager: React.FC = () => {
     handleCleanupBranches,
     handleSearch,
     localBranchesHasMore,
+    triggerReloadLocalBranches
   } = useGitOperations();
   
   const [isUpdatingCurrentBranch, setIsUpdatingCurrentBranch] = useState(false);
@@ -80,6 +81,7 @@ const GitBranchManager: React.FC = () => {
               isUpdatingCurrentBranch={isUpdatingCurrentBranch}
               onScrollEnd={fetchMoreLocalBranches}
               hasMore={localBranchesHasMore}
+              onReloadLocalBranches={triggerReloadLocalBranches}
             />
           </div>
           
