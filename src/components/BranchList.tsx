@@ -59,9 +59,29 @@ const BranchList: React.FC<BranchListProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [switchDialogBranch, setSwitchDialogBranch] = useState<string | null>(null);
   const [showUpdateDialog, setShowUpdateDialog] = useState<boolean>(false);
+  // Add tooltip visibility states
+  const [openTooltips, setOpenTooltips] = useState<Record<string, boolean>>({});
+  
   const scrollRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
   const loadingRef = useRef<HTMLDivElement>(null);
+
+  // Reset tooltip state when loading state changes
+  useEffect(() => {
+    if (isLoading || isUpdatingCurrentBranch) {
+      setOpenTooltips({});
+    }
+  }, [isLoading, isUpdatingCurrentBranch]);
+
+  // Method to handle tooltip visibility
+  const handleTooltipOpenChange = (open: boolean, tooltipId: string) => {
+    if (isLoading || isUpdatingCurrentBranch) return;
+    
+    setOpenTooltips(prev => ({
+      ...prev,
+      [tooltipId]: open
+    }));
+  };
 
   // Sort branches with main, master, staging at the top
   const sortBranches = (branches: Branch[]) => {
@@ -148,13 +168,14 @@ const BranchList: React.FC<BranchListProps> = ({
         {/* Add reload button for local branches */}
         {onReloadLocalBranches && (
           <TooltipProvider>
-            <Tooltip>
+            <Tooltip open={openTooltips['reload-local']} onOpenChange={(open) => handleTooltipOpenChange(open, 'reload-local')}>
               <TooltipTrigger asChild>
                 <Button 
                   variant="outline" 
                   size="icon" 
                   onClick={() => {
                     if (onReloadLocalBranches) onReloadLocalBranches();
+                    setOpenTooltips(prev => ({ ...prev, 'reload-local': false }));
                   }}
                   className="shrink-0"
                 >
@@ -198,16 +219,36 @@ const BranchList: React.FC<BranchListProps> = ({
                   {branch.isCurrent ? (
                     // === UPDATE BRANCH BUTTON WITH CONFIRMATION ===
                     <TooltipProvider>
-                      <Tooltip>
+                      <Tooltip 
+                        open={openTooltips[`update-${branch.name}`]} 
+                        onOpenChange={(open) => handleTooltipOpenChange(open, `update-${branch.name}`)}
+                      >
                         <TooltipTrigger asChild>
                           <span> {/* Wrap the AlertDialog in a span instead of div */}
-                            <AlertDialog open={showUpdateDialog} onOpenChange={(isOpen) => {
-                              setShowUpdateDialog(isOpen);
-                            }}>
+                            <AlertDialog 
+                              open={showUpdateDialog} 
+                              onOpenChange={(isOpen) => {
+                                setShowUpdateDialog(isOpen);
+                                if (!isOpen) {
+                                  // When dialog closes, clear tooltip state
+                                  setOpenTooltips(prev => ({ 
+                                    ...prev, 
+                                    [`update-${branch.name}`]: false 
+                                  }));
+                                }
+                              }}
+                            >
                               <AlertDialogTrigger asChild>
                                 <Button 
                                   size="sm" 
-                                  onClick={() => setShowUpdateDialog(true)}
+                                  onClick={() => {
+                                    setShowUpdateDialog(true);
+                                    // Close tooltip when opening dialog
+                                    setOpenTooltips(prev => ({ 
+                                      ...prev, 
+                                      [`update-${branch.name}`]: false 
+                                    }));
+                                  }}
                                   variant="secondary"
                                   className="flex items-center bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
                                 >
@@ -224,10 +265,21 @@ const BranchList: React.FC<BranchListProps> = ({
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogCancel onClick={() => {
+                                    // Hide tooltip when canceling
+                                    setOpenTooltips(prev => ({ 
+                                      ...prev, 
+                                      [`update-${branch.name}`]: false 
+                                    }));
+                                  }}>Cancel</AlertDialogCancel>
                                   <AlertDialogAction
                                     onClick={() => {
                                       setShowUpdateDialog(false);
+                                      // Hide tooltip before updating
+                                      setOpenTooltips(prev => ({ 
+                                        ...prev, 
+                                        [`update-${branch.name}`]: false 
+                                      }));
                                       onUpdateCurrentBranch();
                                     }}
                                   >
@@ -247,14 +299,32 @@ const BranchList: React.FC<BranchListProps> = ({
                     <>
                       {/* Show delete button for all non-current branches */}
                       <TooltipProvider>
-                        <Tooltip>
+                        <Tooltip 
+                          open={openTooltips[`delete-${branch.name}`]} 
+                          onOpenChange={(open) => handleTooltipOpenChange(open, `delete-${branch.name}`)}
+                        >
                           <TooltipTrigger asChild>
                             <span>
-                              <AlertDialog>
+                              <AlertDialog onOpenChange={(isOpen) => {
+                                if (!isOpen) {
+                                  // When dialog closes, clear tooltip state
+                                  setOpenTooltips(prev => ({
+                                    ...prev,
+                                    [`delete-${branch.name}`]: false
+                                  }));
+                                }
+                              }}>
                                 <AlertDialogTrigger asChild>
                                   <Button 
                                     variant="secondary" 
                                     size="sm"
+                                    onClick={() => {
+                                      // Hide tooltip when opening dialog
+                                      setOpenTooltips(prev => ({
+                                        ...prev,
+                                        [`delete-${branch.name}`]: false
+                                      }));
+                                    }}
                                     className="flex items-center bg-red-50 hover:bg-red-100 border-red-200 text-red-600"
                                   >
                                     <Trash2 size={16} />
@@ -272,7 +342,14 @@ const BranchList: React.FC<BranchListProps> = ({
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                                     <AlertDialogAction
-                                      onClick={() => onDeleteBranch(branch.name)}
+                                      onClick={() => {
+                                        // Hide tooltip before deleting
+                                        setOpenTooltips(prev => ({
+                                          ...prev,
+                                          [`delete-${branch.name}`]: false
+                                        }));
+                                        onDeleteBranch(branch.name);
+                                      }}
                                     >
                                       Delete
                                     </AlertDialogAction>
@@ -289,17 +366,37 @@ const BranchList: React.FC<BranchListProps> = ({
                       
                       {/* Switch branch button comes second */}
                       <TooltipProvider>
-                        <Tooltip>
+                        <Tooltip 
+                          open={openTooltips[`switch-${branch.name}`]} 
+                          onOpenChange={(open) => handleTooltipOpenChange(open, `switch-${branch.name}`)}
+                        >
                           <TooltipTrigger asChild>
                             <span> {/* Wrap AlertDialog in a span */}
-                              <AlertDialog open={switchDialogBranch === branch.name} onOpenChange={(isOpen) => {
-                                setSwitchDialogBranch(isOpen ? branch.name : null);
-                              }}>
+                              <AlertDialog 
+                                open={switchDialogBranch === branch.name} 
+                                onOpenChange={(isOpen) => {
+                                  setSwitchDialogBranch(isOpen ? branch.name : null);
+                                  if (!isOpen) {
+                                    // When dialog closes, clear tooltip state
+                                    setOpenTooltips(prev => ({
+                                      ...prev,
+                                      [`switch-${branch.name}`]: false
+                                    }));
+                                  }
+                                }}
+                              >
                                 <AlertDialogTrigger asChild>
                                   <Button 
                                     variant="secondary" 
                                     size="sm" 
-                                    onClick={() => setSwitchDialogBranch(branch.name)}
+                                    onClick={() => {
+                                      setSwitchDialogBranch(branch.name);
+                                      // Hide tooltip when opening dialog
+                                      setOpenTooltips(prev => ({
+                                        ...prev,
+                                        [`switch-${branch.name}`]: false
+                                      }));
+                                    }}
                                     className="flex items-center bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
                                   >
                                     <ArrowLeftRight size={16} />
@@ -319,6 +416,11 @@ const BranchList: React.FC<BranchListProps> = ({
                                     <AlertDialogAction
                                       onClick={() => {
                                         setSwitchDialogBranch(null);
+                                        // Hide tooltip before switching branch
+                                        setOpenTooltips(prev => ({
+                                          ...prev,
+                                          [`switch-${branch.name}`]: false
+                                        }));
                                         onSwitchBranch(branch.name);
                                       }}
                                     >

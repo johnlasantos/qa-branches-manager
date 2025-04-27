@@ -43,8 +43,12 @@ const GitBranchManager: React.FC = () => {
   // Custom handler for updating the current branch
   const updateCurrentBranchWithTracking = async () => {
     setIsUpdatingCurrentBranch(true);
-    await handleUpdateCurrentBranch();
-    setIsUpdatingCurrentBranch(false);
+    try {
+      await handleUpdateCurrentBranch();
+    } finally {
+      // Ensure we set loading state to false regardless of success/failure
+      setIsUpdatingCurrentBranch(false);
+    }
   };
 
   return (
