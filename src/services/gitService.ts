@@ -4,9 +4,11 @@ import { Branch } from "@/components/BranchList";
 import { RemoteBranch } from "@/components/BranchSearch";
 
 // Helper function for API requests
-const apiRequest = async (endpoint: string, options?: RequestInit) => {
+const apiRequest = async (endpoint: string, apiBaseUrl: string = '', options?: RequestInit) => {
   try {
-    const url = `/api/${endpoint}`;
+    // Use apiBaseUrl if provided, otherwise use relative path
+    const baseUrl = apiBaseUrl ? apiBaseUrl.replace(/\/$/, '') : '';
+    const url = `${baseUrl}/api/${endpoint}`;
     console.log(`Making request to: ${url}`);
     
     const response = await fetch(url, {
@@ -32,6 +34,7 @@ const apiRequest = async (endpoint: string, options?: RequestInit) => {
 export interface Config {
   headerLink: string;
   basePath: string;
+  apiBaseUrl: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -44,50 +47,52 @@ export interface PaginatedResponse<T> {
   };
 }
 
-export const getConfig = async (): Promise<Config> => {
-  const data = await apiRequest('config');
+export const getConfig = async (apiBaseUrl: string = ''): Promise<Config> => {
+  const data = await apiRequest('config', apiBaseUrl);
   return data;
 };
 
 export const getLocalBranches = async (
   page: number = 0, 
-  limit: number = 10
+  limit: number = 10,
+  apiBaseUrl: string = ''
 ): Promise<PaginatedResponse<Branch>> => {
-  return await apiRequest(`branches?page=${page}&limit=${limit}`);
+  return await apiRequest(`branches?page=${page}&limit=${limit}`, apiBaseUrl);
 };
 
 export const getRemoteBranches = async (
   page: number = 0, 
-  limit: number = 10
+  limit: number = 10,
+  apiBaseUrl: string = ''
 ): Promise<PaginatedResponse<RemoteBranch>> => {
-  return await apiRequest(`remote-branches?page=${page}&limit=${limit}`);
+  return await apiRequest(`remote-branches?page=${page}&limit=${limit}`, apiBaseUrl);
 };
 
-export const switchBranch = async (branchName: string): Promise<string> => {
-  const data = await apiRequest('checkout', {
+export const switchBranch = async (branchName: string, apiBaseUrl: string = ''): Promise<string> => {
+  const data = await apiRequest('checkout', apiBaseUrl, {
     method: 'POST',
     body: JSON.stringify({ branch: branchName }),
   });
   return data.message;
 };
 
-export const deleteBranch = async (branchName: string): Promise<string> => {
-  const data = await apiRequest('delete-branch', {
+export const deleteBranch = async (branchName: string, apiBaseUrl: string = ''): Promise<string> => {
+  const data = await apiRequest('delete-branch', apiBaseUrl, {
     method: 'POST',
     body: JSON.stringify({ branch: branchName }),
   });
   return data.message;
 };
 
-export const updateCurrentBranch = async (): Promise<string> => {
-  const data = await apiRequest('pull', {
+export const updateCurrentBranch = async (apiBaseUrl: string = ''): Promise<string> => {
+  const data = await apiRequest('pull', apiBaseUrl, {
     method: 'POST'
   });
   return data.message;
 };
 
-export const cleanupBranches = async (): Promise<string> => {
-  const data = await apiRequest('cleanup', {
+export const cleanupBranches = async (apiBaseUrl: string = ''): Promise<string> => {
+  const data = await apiRequest('cleanup', apiBaseUrl, {
     method: 'POST'
   });
   
@@ -102,9 +107,11 @@ export const cleanupBranches = async (): Promise<string> => {
 export const searchBranches = async (
   query: string, 
   page: number = 0, 
-  limit: number = 10
+  limit: number = 10,
+  apiBaseUrl: string = ''
 ): Promise<PaginatedResponse<RemoteBranch>> => {
   return await apiRequest(
-    `remote-branches/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`
+    `remote-branches/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`,
+    apiBaseUrl
   );
 };

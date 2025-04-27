@@ -4,6 +4,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 interface Config {
   headerLink: string;
   basePath: string;
+  apiBaseUrl: string;
   isLoaded: boolean;
 }
 
@@ -11,6 +12,7 @@ interface Config {
 const defaultConfig: Config = {
   headerLink: '',
   basePath: '/',
+  apiBaseUrl: '',
   isLoaded: false
 };
 
@@ -47,12 +49,14 @@ export const ConfigProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setConfig({
           headerLink: data.headerLink || defaultConfig.headerLink,
           basePath: data.basePath || defaultConfig.basePath,
+          apiBaseUrl: data.apiBaseUrl || defaultConfig.apiBaseUrl,
           isLoaded: true
         });
         
         console.log('Config loaded:', {
           headerLink: data.headerLink,
-          basePath: data.basePath
+          basePath: data.basePath,
+          apiBaseUrl: data.apiBaseUrl
         });
       } catch (error) {
         console.error('Failed to load configuration:', error);

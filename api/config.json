@@ -2,5 +2,6 @@
 {
   "repositoryPath": ".",
   "headerLink": "https://www.domain.com/project/",
-  "basePath": "/"
+  "basePath": "/",
+  "apiBaseUrl": "http://127.0.0.1:3001/"
 }
