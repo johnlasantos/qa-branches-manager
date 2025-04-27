@@ -30,14 +30,21 @@ try {
   );
   console.log('✅ server.js copied to dist folder');
 
-  // 3. Copy config.json to dist
+  // 3. Copy nssm.exe to dist
+  fs.copyFileSync(
+    path.resolve(apiDir, 'nssm.exe'),
+    path.resolve(distDir, 'nssm.exe')
+  );
+  console.log('✅ nssm.exe copied to dist folder');
+
+  // 4. Copy config.json to dist
   fs.copyFileSync(
     path.resolve(apiDir, 'config.json'),
     path.resolve(distDir, 'config.json')
   );
   console.log('✅ config.json copied to dist folder');
 
-  // 4. Create a package.json in the dist folder for backend dependencies
+  // 5. Create a package.json in the dist folder for backend dependencies
   const apiPackageJSON = require(path.resolve(apiDir, 'package.json'));
   const distPackageJSON = {
     name: apiPackageJSON.name,

@@ -48,7 +48,10 @@ if (!fs.existsSync(config.repositoryPath)) {
 // Helper function to execute git commands
 async function runGitCommand(command) {
   try {
-    const { stdout, stderr } = await execAsync(command, { cwd: config.repositoryPath });
+    const { stdout, stderr } = await execAsync(command, { 
+      cwd: config.repositoryPath,
+      windowsHide: true // 👈 Aqui adiciona essa configuração
+    });
     return { success: true, output: stdout, error: stderr };
   } catch (error) {
     console.error(`Git command failed: ${command}`, error);
