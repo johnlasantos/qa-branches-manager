@@ -106,6 +106,9 @@ export const useGitOperations = () => {
       const output = await switchBranch(branchName, config.apiBaseUrl);
       setGitOutput(output);
       
+      // Important: Set loading to false immediately after the operation completes
+      setIsLoading(false);
+      
       if (opts && opts.imported) {
         toast.success(`Local branch created: ${branchName}`, {
           description: 'Branch imported from remote successfully.',
@@ -116,16 +119,15 @@ export const useGitOperations = () => {
         });
       }
       
-      setIsLoading(false);
-      
-      // Refresh local branches in the background
+      // Refresh local branches in the background without blocking UI
       setTimeout(() => {
         fetchLocalBranches(true);
       }, 100);
     } catch (error) {
+      // Important: Set loading to false immediately in case of error
+      setIsLoading(false);
       toast.error(`Failed to switch to ${branchName}`);
       console.error(error);
-      setIsLoading(false);
       fetchLocalBranches(true);
     }
   };
@@ -143,17 +145,19 @@ export const useGitOperations = () => {
       const output = await deleteBranch(branchName, config.apiBaseUrl);
       setGitOutput(output);
       
-      toast.success(`Deleted ${branchName}`);
+      // Important: Set loading to false immediately after the operation completes
       setIsLoading(false);
+      toast.success(`Deleted ${branchName}`);
       
-      // Refresh local branches in the background
+      // Refresh local branches in the background without blocking UI
       setTimeout(() => {
         fetchLocalBranches(true);
       }, 100);
     } catch (error) {
+      // Important: Set loading to false immediately in case of error
+      setIsLoading(false);
       toast.error(`Failed to delete ${branchName}`);
       console.error(error);
-      setIsLoading(false);
       fetchLocalBranches(true);
     }
   };
@@ -165,20 +169,21 @@ export const useGitOperations = () => {
       const output = await updateCurrentBranch(config.apiBaseUrl);
       setGitOutput(output);
       
+      // Important: Set loading to false immediately after the operation completes
+      setIsLoading(false);
       toast.success('Branch updated successfully', {
         description: 'The current branch has been updated.',
       });
       
-      setIsLoading(false);
-      
-      // Refresh local branches in the background
+      // Refresh local branches in the background without blocking UI
       setTimeout(() => {
         fetchLocalBranches(true);
       }, 100);
     } catch (error) {
+      // Important: Set loading to false immediately in case of error
+      setIsLoading(false);
       toast.error('Failed to update branch');
       console.error(error);
-      setIsLoading(false);
     }
   };
 
@@ -189,18 +194,19 @@ export const useGitOperations = () => {
       const output = await cleanupBranches(config.apiBaseUrl);
       setGitOutput(output);
       
+      // Important: Set loading to false immediately after the operation completes
+      setIsLoading(false);
       toast.success('Stale branches removed');
       
-      setIsLoading(false);
-      
-      // Refresh local branches in the background
+      // Refresh local branches in the background without blocking UI
       setTimeout(() => {
         fetchLocalBranches(true);
       }, 100);
     } catch (error) {
+      // Important: Set loading to false immediately in case of error
+      setIsLoading(false);
       toast.error('Failed to clean up branches');
       console.error(error);
-      setIsLoading(false);
     }
   };
 

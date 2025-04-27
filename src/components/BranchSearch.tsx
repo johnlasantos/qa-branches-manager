@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, GitBranch, ChevronDown } from 'lucide-react';
+import { Search, GitBranch, ChevronDown, Loader } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -57,6 +56,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
   const [showImportDialog, setShowImportDialog] = useState(false);
   const observer = useRef<IntersectionObserver | null>(null);
   const loadingRef = useRef<HTMLLIElement>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const localBranchNames = new Set(localBranches.map(b => b.name));
   
@@ -74,7 +74,11 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
     observer.current = new IntersectionObserver(entries => {
       const [entry] = entries;
       if (entry.isIntersecting && showSuggestions) {
+        setIsLoadingMore(true);
         onScrollEnd();
+        setTimeout(() => {
+          setIsLoadingMore(false);
+        }, 800);
       }
     }, { threshold: 0.1 });
 
@@ -237,7 +241,14 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
                 </li>
               ))}
               <li ref={loadingRef} className="py-2 flex justify-center">
-                <div className="h-4"></div>
+                {isLoadingMore ? (
+                  <div className="flex items-center justify-center py-1">
+                    <Loader className="h-4 w-4 text-blue-500 animate-spin mr-2" />
+                    <span className="text-xs text-gray-500">Loading more branches...</span>
+                  </div>
+                ) : (
+                  <div className="h-4"></div>
+                )}
               </li>
             </ul>
           </ScrollArea>
