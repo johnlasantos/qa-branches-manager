@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
 interface Config {
@@ -31,8 +32,12 @@ export const ConfigProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       try {
         // In development, use the proxy
         const isDev = import.meta.env.DEV;
-        const configUrl = isDev ? '/api/config' : '/config';
         
+        // Use config.json as a static file in production
+        // This works better with Apache serving static files
+        const configUrl = isDev ? '/api/config' : './config.json';
+        
+        console.log('Fetching config from:', configUrl);
         const response = await fetch(configUrl);
         
         if (!response.ok) {

@@ -37,7 +37,7 @@ try {
   );
   console.log('✅ nssm.exe copied to dist folder');
 
-  // 4. Copy config.json to dist
+  // 4. Copy config.json to dist - now with the correct .json extension
   fs.copyFileSync(
     path.resolve(apiDir, 'config.json'),
     path.resolve(distDir, 'config.json')

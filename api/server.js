@@ -64,6 +64,22 @@ if (isProduction) {
   const publicPath = path.join(__dirname, 'public');
   console.log(`Serving static files from: ${publicPath}`);
   app.use(express.static(publicPath));
+  
+  // Explicitly serve the config.json file for the frontend to fetch
+  app.get('/config.json', (req, res) => {
+    try {
+      // Send the safe config as json
+      const safeConfig = {
+        headerLink: config.headerLink || 'http://athena.scriptcase.net:8092/scriptcase-git/',
+        apiBaseUrl: config.apiBaseUrl || 'http://localhost:3001/',
+        basePath: config.basePath || '/'
+      };
+      res.json(safeConfig);
+    } catch (error) {
+      console.error('Error serving config.json:', error);
+      res.status(500).json({ success: false, message: 'Failed to serve configuration' });
+    }
+  });
 }
 
 // Config endpoint - Return safe configuration values to the frontend
