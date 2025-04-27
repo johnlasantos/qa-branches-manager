@@ -100,7 +100,13 @@ app.get('/branches', async (req, res) => {
         const name = line.replace('*', '').trim().split(' ')[0];
         const hasRemote = remoteBranches.some(rb => rb === name);
         
-        return { name, current: isCurrent, hasRemote };
+        // Use both "current" and "isCurrent" for compatibility
+        return { 
+          name, 
+          current: isCurrent, 
+          isCurrent: isCurrent, 
+          hasRemote 
+        };
       });
     
     // Get total count for pagination info

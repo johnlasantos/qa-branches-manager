@@ -26,7 +26,8 @@ import {
 
 export interface Branch {
   name: string;
-  isCurrent: boolean;
+  isCurrent?: boolean; // Make this optional to handle both "isCurrent" and "current" fields
+  current?: boolean; // Add this to handle API response with "current" field
   hasRemote: boolean;
 }
 
@@ -58,8 +59,14 @@ const BranchList: React.FC<BranchListProps> = ({
   const observer = useRef<IntersectionObserver | null>(null);
   const loadingRef = useRef<HTMLDivElement>(null);
 
+  // Normalize branch data to handle both "isCurrent" and "current" fields
+  const normalizedBranches = branches.map(branch => ({
+    ...branch,
+    isCurrent: branch.isCurrent !== undefined ? branch.isCurrent : branch.current,
+  }));
+
   // Filter branches by search query
-  const filteredBranches = branches.filter(branch =>
+  const filteredBranches = normalizedBranches.filter(branch =>
     branch.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -127,7 +134,7 @@ const BranchList: React.FC<BranchListProps> = ({
               key={branch.name}
               className={cn(
                 "branch-item p-3 rounded-md border", 
-                branch.isCurrent ? "branch-current" : "border-gray-200"
+                branch.isCurrent ? "branch-current border-green-300 bg-green-50" : "border-gray-200"
               )}
             >
               <div className="flex items-center justify-between">
@@ -149,7 +156,7 @@ const BranchList: React.FC<BranchListProps> = ({
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div>
+                          <span> {/* Wrap the AlertDialog in a span instead of div */}
                             <AlertDialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
                               <AlertDialogTrigger asChild>
                                 <Button 
@@ -183,7 +190,7 @@ const BranchList: React.FC<BranchListProps> = ({
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>
-                          </div>
+                          </span>
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Update this branch</p>
@@ -197,35 +204,37 @@ const BranchList: React.FC<BranchListProps> = ({
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button 
-                                    variant="secondary" 
-                                    size="sm"
-                                    className="flex items-center bg-red-50 hover:bg-red-100 border-red-200 text-red-600"
-                                  >
-                                    <Trash2 size={16} />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>
-                                      Are you sure you want to delete <span className="font-mono">{branch.name}</span>?
-                                    </AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      This will permanently delete the branch.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => onDeleteBranch(branch.name)}
+                              <span> {/* Wrap AlertDialog in a span */}
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button 
+                                      variant="secondary" 
+                                      size="sm"
+                                      className="flex items-center bg-red-50 hover:bg-red-100 border-red-200 text-red-600"
                                     >
-                                      Delete
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                                      <Trash2 size={16} />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>
+                                        Are you sure you want to delete <span className="font-mono">{branch.name}</span>?
+                                      </AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This will permanently delete the branch.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => onDeleteBranch(branch.name)}
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </span>
                             </TooltipTrigger>
                             <TooltipContent>
                               <p>Delete this branch</p>
@@ -238,7 +247,7 @@ const BranchList: React.FC<BranchListProps> = ({
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <div>
+                            <span> {/* Wrap AlertDialog in a span */}
                               <AlertDialog open={switchDialogBranch === branch.name} onOpenChange={(open) => setSwitchDialogBranch(open ? branch.name : null)}>
                                 <AlertDialogTrigger asChild>
                                   <Button 
@@ -272,7 +281,7 @@ const BranchList: React.FC<BranchListProps> = ({
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
                               </AlertDialog>
-                            </div>
+                            </span>
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>Change to this branch</p>

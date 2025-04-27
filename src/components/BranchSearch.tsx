@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, GitBranch, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -52,7 +51,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
   const searchRef = useRef<HTMLDivElement>(null);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const observer = useRef<IntersectionObserver | null>(null);
-  const loadingRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef<HTMLLIElement>(null);
 
   const localBranchNames = new Set(localBranches.map(b => b.name));
   const remoteBranchNames = new Set(remoteBranches.map(b => b.name));
@@ -64,7 +63,6 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
       return notInLocal && matchesSearch;
     });
 
-  // Set up intersection observer for infinite scroll
   useEffect(() => {
     if (!onScrollEnd) return;
 
@@ -233,9 +231,8 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
                   )}
                 </li>
               ))}
-              {/* Loading indicator for infinite scroll */}
               <li ref={loadingRef} className="py-2 flex justify-center">
-                <div className="h-4"></div> {/* Placeholder to trigger intersection */}
+                <div className="h-4"></div>
               </li>
             </ul>
           </ScrollArea>
