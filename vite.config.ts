@@ -18,6 +18,11 @@ export default defineConfig(({ mode }) => ({
       }
     }
   },
+  build: {
+    // Output to dist/public for unified build
+    outDir: 'dist/public',
+    emptyOutDir: true
+  },
   plugins: [
     react(),
     mode === 'development' &&

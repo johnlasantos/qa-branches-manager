@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const { exec } = require('child_process');
@@ -16,11 +15,14 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Determine if we're running in production/unified build
+const isProduction = fs.existsSync(path.join(__dirname, 'public'));
+
 // Load config
 let config = { 
   repositoryPath: '.',
   headerLink: 'http://athena.scriptcase.net:8092/scriptcase-git/',
-  apiBaseUrl: 'http://localhost:3001/',
+  apiBaseUrl: isProduction ? '/' : 'http://localhost:3001/',
   basePath: '/'
 };
 const configPath = path.join(__dirname, 'config.json');
@@ -54,6 +56,13 @@ async function runGitCommand(command) {
   }
 }
 
+// If in production mode, serve static files from the public directory
+if (isProduction) {
+  const publicPath = path.join(__dirname, 'public');
+  console.log(`Serving static files from: ${publicPath}`);
+  app.use(express.static(publicPath));
+}
+
 // Config endpoint - Return safe configuration values to the frontend
 app.get('/config', (req, res) => {
   try {
@@ -69,8 +78,6 @@ app.get('/config', (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to get configuration' });
   }
 });
-
-// Endpoints
 
 // Get all local branches with pagination
 app.get('/branches', async (req, res) => {
@@ -462,10 +469,20 @@ app.get('/status', async (req, res) => {
   }
 });
 
+// If in production mode, handle all other routes for SPA
+if (isProduction) {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  });
+}
+
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Git Branch Manager Backend running on port ${PORT}`);
+  console.log(`Git Branch Manager ${isProduction ? 'Production' : 'Development'} Server running on port ${PORT}`);
   console.log(`Using repository at: ${path.resolve(config.repositoryPath)}`);
   console.log(`API Base URL: ${config.apiBaseUrl}`);
   console.log(`Base Path: ${config.basePath}`);
+  if (isProduction) {
+    console.log(`Serving frontend from: ${path.join(__dirname, 'public')}`);
+  }
 });
