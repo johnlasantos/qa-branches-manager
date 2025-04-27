@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 import GitHeader from '@/components/GitHeader';
 import BranchList from '@/components/BranchList';
@@ -27,6 +28,9 @@ const GitBranchManager: React.FC = () => {
     handleSearch,
     localBranchesHasMore,
   } = useGitOperations();
+  
+  // Add a state to track if we're specifically updating the current branch
+  const [isUpdatingCurrentBranch, setIsUpdatingCurrentBranch] = useState(false);
 
   useEffect(() => {
     if (config.isLoaded) {
@@ -35,10 +39,17 @@ const GitBranchManager: React.FC = () => {
     }
   }, [config.isLoaded]);
 
+  // Custom handler for updating the current branch
+  const updateCurrentBranchWithTracking = async () => {
+    setIsUpdatingCurrentBranch(true);
+    await handleUpdateCurrentBranch();
+    setIsUpdatingCurrentBranch(false);
+  };
+
   return (
     <>
       {isLoading && <LoadingOverlay />}
-      <div className="container mx-auto px-4 py-6 max-w-7xl overflow-hidden">
+      <div className="container mx-auto px-4 py-6 max-w-7xl h-screen overflow-hidden">
         <GitHeader />
         
         <div className="pt-2">
@@ -53,8 +64,8 @@ const GitBranchManager: React.FC = () => {
         
         <Separator className="my-4" />
         
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6">
-          <div className="lg:col-span-3">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6 h-[calc(100vh-14rem)]">
+          <div className="lg:col-span-3 overflow-hidden">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Local Branches</h2>
               <BranchCleanupButton onCleanup={handleCleanupBranches} isLoading={isLoading} />
@@ -64,8 +75,9 @@ const GitBranchManager: React.FC = () => {
               branches={localBranches}
               onSwitchBranch={handleSwitchBranch}
               onDeleteBranch={handleDeleteBranch}
-              onUpdateCurrentBranch={handleUpdateCurrentBranch}
+              onUpdateCurrentBranch={updateCurrentBranchWithTracking}
               isLoading={isLoading}
+              isUpdatingCurrentBranch={isUpdatingCurrentBranch}
               onScrollEnd={fetchMoreLocalBranches}
               hasMore={localBranchesHasMore}
             />

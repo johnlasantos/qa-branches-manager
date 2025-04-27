@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, GitBranch, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -200,7 +201,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
         </TooltipProvider>
       </div>
       {showSuggestions && filteredBranches.length > 0 && (
-        <div className="search-results mt-1 absolute w-full bg-white border border-gray-200 rounded shadow-lg">
+        <div className="search-results mt-1 absolute left-0 bg-white border border-gray-200 rounded shadow-lg" style={{ width: inputRef.current ? inputRef.current.offsetWidth : 'auto' }}>
           <div className="py-1 text-xs text-gray-500 px-3 border-b">
             Remote branches
           </div>
@@ -231,7 +232,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
                   )}
                 </li>
               ))}
-              <li ref={loadingRef} className="py-2 flex justify-center">
+              <li className="py-2 flex justify-center" ref={el => { loadingRef.current = el as HTMLLIElement; }}>
                 <div className="h-4"></div>
               </li>
             </ul>

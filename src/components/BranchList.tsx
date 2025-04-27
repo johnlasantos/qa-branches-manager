@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { AlertTriangle, ArrowLeftRight, Trash2, RefreshCw, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,6 +40,7 @@ interface BranchListProps {
   hasMore?: boolean;
   className?: string;
   isLoading?: boolean;
+  isUpdatingCurrentBranch?: boolean; // New prop for tracking current branch updates specifically
 }
 
 const BranchList: React.FC<BranchListProps> = ({ 
@@ -49,7 +51,8 @@ const BranchList: React.FC<BranchListProps> = ({
   onScrollEnd,
   hasMore = false,
   className,
-  isLoading = false
+  isLoading = false,
+  isUpdatingCurrentBranch = false // Default to false
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [switchDialogBranch, setSwitchDialogBranch] = useState<string | null>(null);
@@ -135,7 +138,7 @@ const BranchList: React.FC<BranchListProps> = ({
           placeholder="Search local branches..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:border-primary"
+          className="pl-9 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-input"
         />
       </div>
 
@@ -177,7 +180,7 @@ const BranchList: React.FC<BranchListProps> = ({
                                   variant="secondary"
                                   className="flex items-center bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
                                 >
-                                  <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+                                  <RefreshCw size={16} className={isUpdatingCurrentBranch ? "animate-spin" : ""} />
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
