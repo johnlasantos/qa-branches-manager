@@ -1,79 +1,85 @@
 
-# Git Branch Manager - Backend
+# 🚀 Branch Manager - Unified Build
 
-This is the backend for the Git Branch Manager application. It provides a REST API to interact with Git repositories.
+This package contains the ready-to-deploy version of the Branch Manager application, including both frontend and backend.
 
-## Requirements
+## 📦 Requirements
 
-- Node.js (v14 or higher)
-- A Git repository to manage
+- Node.js (version 14 or higher)
+- Access to a Git repository (to be managed)
 
-## Setup Instructions
+## 🛠️ Installation
 
-1. Install dependencies:
+After extracting the ZIP file, follow these steps:
 
+### 1. Install dependencies
+
+**Windows / Linux / MacOS**
 ```bash
-cd api
 npm install
 ```
 
-2. Configure the repository path:
+### 2. Configure your repository path
 
-Edit the `config.json` file and set the `repositoryPath` to the absolute path of your Git repository.
+Edit the `config.json` file to set the path to your Git repository.
 
+Example:
 ```json
 {
-  "repositoryPath": "/path/to/your/git/repository"
+  "repositoryPath": "/absolute/path/to/your/git/repository"
 }
 ```
 
-3. Build the unified package:
-
-```bash
-cd ..
-node build.cjs
+On Windows, use double backslashes `\` or forward slashes `/`:
+```json
+{
+  "repositoryPath": "C:/Users/YourUser/Projects/YourRepo"
+}
 ```
 
-4. Navigate to the dist directory and install dependencies:
+### 3. Start the server
 
-```bash
-cd dist
-npm install
-```
-
-5. Start the server:
-
+**Windows / Linux / MacOS**
 ```bash
 npm start
 ```
 
-The server will run on port 3001 by default. You can change this by setting the `PORT` environment variable.
+By default, the server will run on **http://localhost:3001**.
 
-## API Endpoints
+You can change the port by setting the `PORT` environment variable:
+```bash
+# Linux / MacOS
+PORT=8080 npm start
 
-- `GET /branches` - Returns a list of local branches
-- `GET /remote-branches` - Returns a list of remote branches
-- `GET /remote-branches/search?q=query` - Searches for remote branches
-- `POST /checkout` - Switches to a specified branch
-- `POST /delete-branch` - Deletes a specified branch
-- `POST /pull` - Pulls the latest changes from the current branch
-- `POST /cleanup` - Removes stale/merged branches
-- `GET /status` - Returns the current status of the repository
+# Windows (Powershell)
+$env:PORT=8080; npm start
 
-## Frontend Configuration
-
-To connect your frontend to this backend:
-
-1. Create a `.env` file in the frontend root directory with:
-
-```
-VITE_API_BASE_URL=http://localhost:3001
+# Windows (CMD)
+set PORT=8080 && npm start
 ```
 
-2. Adjust the URL if your backend is running on a different host or port.
+## 🌐 Accessing the Application
 
-## Troubleshooting
+Once the server is running, open your browser and navigate to:
 
-- If you get errors about the repository path not being found, make sure the path in `config.json` is correct and the directory exists.
-- Make sure the user running the Node.js process has read/write access to the Git repository.
-- If you get CORS errors, verify that the frontend URL is correctly accessing the backend.
+```
+http://localhost:3001
+```
+
+The frontend will be served automatically, and API endpoints will be available under `/api`.
+
+## 📋 Useful Commands
+
+- Install dependencies: `npm install`
+- Start the server: `npm start`
+- Change server port: Set `PORT` environment variable before starting
+
+## ❗ Troubleshooting
+
+- **Repository not found**: Make sure the `repositoryPath` in `config.json` points to a valid Git repository.
+- **Permission issues**: Ensure that the Node.js process has read/write access to the Git repository folder.
+- **CORS errors**: Should not happen, since frontend and backend are served from the same server.
+
+---
+
+Enjoy managing your Git branches easily!
