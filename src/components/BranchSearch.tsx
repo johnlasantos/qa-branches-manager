@@ -37,6 +37,10 @@ interface BranchSearchProps {
   className?: string;
 }
 
+const isSymbolicRef = (branchName: string) => {
+  return branchName.includes('HEAD ->') || branchName.includes('origin/HEAD');
+};
+
 const BranchSearch: React.FC<BranchSearchProps> = ({
   remoteBranches,
   localBranches,
@@ -55,13 +59,13 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
   const loadingRef = useRef<HTMLLIElement>(null);
 
   const localBranchNames = new Set(localBranches.map(b => b.name));
-  const remoteBranchNames = new Set(remoteBranches.map(b => b.name));
-
+  
   const filteredBranches = remoteBranches
     .filter(branch => {
       const notInLocal = !localBranchNames.has(branch.name);
+      const notSymbolicRef = !isSymbolicRef(branch.name);
       const matchesSearch = branch.name.toLowerCase().includes(searchQuery.toLowerCase());
-      return notInLocal && matchesSearch;
+      return notInLocal && notSymbolicRef && matchesSearch;
     });
 
   useEffect(() => {
@@ -88,16 +92,17 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
 
   const handleInputFocus = () => {
     setShowSuggestions(true);
-    if (!searchQuery) {
-      setShowSuggestions(true);
-    }
+  };
+
+  const handleCaretClick = () => {
+    setShowSuggestions(!showSuggestions);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
     onSearch(value);
-    setSelectedBranch(null); // Unset selection when changing query
+    setSelectedBranch(null);
     setShowSuggestions(true);
   };
 
@@ -120,13 +125,6 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (searchQuery.length === 0) {
-      setSelectedBranch(null);
-      setShowSuggestions(false);
-    }
-  }, [searchQuery]);
-
   const importEnabled = selectedBranch !== null &&
     filteredBranches.some(branch => branch.name === selectedBranch);
 
@@ -141,10 +139,13 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
             value={searchQuery}
             onChange={handleSearchChange}
             onFocus={handleInputFocus}
-            className="pr-9 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-input"
+            className="pr-9 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-input"
             autoComplete="off"
           />
-          <ChevronDown className="absolute right-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <ChevronDown 
+            className="absolute right-2.5 top-2.5 h-4 w-4 text-gray-500 cursor-pointer" 
+            onClick={handleCaretClick}
+          />
         </div>
         <TooltipProvider>
           <Tooltip>
@@ -201,7 +202,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
         </TooltipProvider>
       </div>
       {showSuggestions && filteredBranches.length > 0 && (
-        <div className="search-results mt-1 absolute left-0 bg-white border border-gray-200 rounded shadow-lg" style={{ width: inputRef.current ? inputRef.current.offsetWidth : 'auto' }}>
+        <div className="search-results mt-1 absolute left-0 bg-white border border-gray-200 rounded shadow-lg z-50" style={{ width: inputRef.current?.offsetWidth }}>
           <div className="py-1 text-xs text-gray-500 px-3 border-b">
             Remote branches
           </div>
@@ -232,7 +233,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
                   )}
                 </li>
               ))}
-              <li className="py-2 flex justify-center" ref={el => { loadingRef.current = el as HTMLLIElement; }}>
+              <li ref={loadingRef} className="py-2 flex justify-center">
                 <div className="h-4"></div>
               </li>
             </ul>

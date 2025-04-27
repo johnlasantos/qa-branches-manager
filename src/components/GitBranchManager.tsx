@@ -7,6 +7,7 @@ import BranchSearch from '@/components/BranchSearch';
 import GitOutput from '@/components/GitOutput';
 import BranchCleanupButton from './BranchCleanupButton';
 import LoadingOverlay from './LoadingOverlay';
+import Footer from './Footer';
 import { useGitOperations } from '@/hooks/useGitOperations';
 import { useConfig } from '@/contexts/ConfigContext';
 
@@ -49,7 +50,7 @@ const GitBranchManager: React.FC = () => {
   return (
     <>
       {isLoading && <LoadingOverlay />}
-      <div className="container mx-auto px-4 py-6 max-w-7xl h-screen overflow-hidden">
+      <div className="container mx-auto px-4 py-6 max-w-7xl h-[calc(100vh-8rem)] overflow-hidden flex flex-col">
         <GitHeader />
         
         <div className="pt-2">
@@ -64,7 +65,7 @@ const GitBranchManager: React.FC = () => {
         
         <Separator className="my-4" />
         
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6 h-[calc(100vh-14rem)]">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 overflow-hidden">
           <div className="lg:col-span-3 overflow-hidden">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Local Branches</h2>
@@ -87,6 +88,7 @@ const GitBranchManager: React.FC = () => {
             <GitOutput output={gitOutput} className="h-full" />
           </div>
         </div>
+        <Footer />
       </div>
     </>
   );
