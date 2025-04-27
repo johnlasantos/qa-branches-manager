@@ -140,7 +140,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
             value={searchQuery}
             onChange={handleSearchChange}
             onFocus={handleInputFocus}
-            className="pr-9 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:border-primary"
+            className="pr-9 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-input"
             autoComplete="off"
           />
           <ChevronDown className="absolute right-2.5 top-2.5 h-4 w-4 text-gray-500" />

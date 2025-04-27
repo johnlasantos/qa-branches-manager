@@ -60,7 +60,7 @@ const BranchList: React.FC<BranchListProps> = ({
 
   // Sort branches with main, master, staging at the top
   const sortBranches = (branches: Branch[]) => {
-    const orderMap = { main: 0, master: 1, staging: 2 };
+    const orderMap = { main: 0, master: 1, develop: 2, staging: 3 };
     return [...branches].sort((a, b) => {
       const aOrder = orderMap[a.name as keyof typeof orderMap] ?? 999;
       const bOrder = orderMap[b.name as keyof typeof orderMap] ?? 999;
