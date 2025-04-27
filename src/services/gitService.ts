@@ -5,14 +5,10 @@ import { RemoteBranch } from "@/components/BranchSearch";
 // Helper function for API requests
 const apiRequest = async (endpoint: string, apiBaseUrl: string = '', options?: RequestInit) => {
   try {
-    // Build the complete URL based on apiBaseUrl
+    // Use the apiBaseUrl directly as provided, just ensure no double slashes
     const baseUrl = apiBaseUrl ? apiBaseUrl.replace(/\/$/, '') : '';
+    const url = `${baseUrl}/${endpoint}`;
     
-    // Check if apiBaseUrl already contains '/api'
-    const url = baseUrl.includes('/api') 
-      ? `${baseUrl}/${endpoint}`  // If it already has /api, don't add it again
-      : `${baseUrl}/api/${endpoint}`; // Otherwise add /api/
-      
     console.log(`Making request to: ${url}`);
     
     const response = await fetch(url, {
