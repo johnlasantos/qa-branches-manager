@@ -1,4 +1,3 @@
-
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
@@ -62,6 +61,24 @@ try {
     JSON.stringify(distPackageJSON, null, 2)
   );
   console.log('✅ package.json created in dist folder');
+
+  // 6. Create index.html for redirection
+  const indexHtmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="refresh" content="0; url=manager/" />
+  <title>Redirecting...</title>
+</head>
+<body>
+  Redirecting...
+</body>
+</html>`;
+
+  fs.writeFileSync(
+    path.resolve(distDir, 'index.html'),
+    indexHtmlContent
+  );
+  console.log('✅ index.html created in dist folder');
 
   console.log('🎉 Build process completed successfully!');
   console.log('');
