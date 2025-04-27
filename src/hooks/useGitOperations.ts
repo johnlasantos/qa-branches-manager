@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Branch } from '@/components/BranchList';
@@ -90,28 +89,38 @@ export const useGitOperations = () => {
     await fetchRemoteBranches(false);
   };
 
-  // Add a flag to differentiate between "switch" and "import"
   const handleSwitchBranch = async (branchName: string, opts?: { imported?: boolean }) => {
     setIsLoading(true);
     setGitOutput('');
+    
     try {
       const output = await switchBranch(branchName, config.apiBaseUrl);
       setGitOutput(output);
-      await fetchLocalBranches(true);
+      
       if (opts && opts.imported) {
-        // Import flow
         toast.success(`Local branch created: ${branchName}`, {
           description: 'Branch imported from remote successfully.',
         });
       } else {
-        // Switch flow
         toast.success(`Switched to branch: ${branchName}`, {
           description: 'Branch change was successful.',
         });
       }
+      
+      const updatedBranches = localBranches.map(branch => ({
+        ...branch,
+        isCurrent: branch.name === branchName
+      }));
+      
+      setLocalBranches(updatedBranches);
+      
+      setTimeout(() => {
+        fetchLocalBranches(true);
+      }, 100);
     } catch (error) {
       toast.error(`Failed to switch to ${branchName}`);
       console.error(error);
+      fetchLocalBranches(true);
     } finally {
       setIsLoading(false);
     }
@@ -120,14 +129,24 @@ export const useGitOperations = () => {
   const handleDeleteBranch = async (branchName: string) => {
     setIsLoading(true);
     setGitOutput('');
+    
     try {
       const output = await deleteBranch(branchName, config.apiBaseUrl);
       setGitOutput(output);
-      await fetchLocalBranches(true);
+      
+      setLocalBranches(prevBranches => 
+        prevBranches.filter(branch => branch.name !== branchName)
+      );
+      
       toast.success(`Deleted ${branchName}`);
+      
+      setTimeout(() => {
+        fetchLocalBranches(true);
+      }, 100);
     } catch (error) {
       toast.error(`Failed to delete ${branchName}`);
       console.error(error);
+      fetchLocalBranches(true);
     } finally {
       setIsLoading(false);
     }
@@ -139,10 +158,14 @@ export const useGitOperations = () => {
     try {
       const output = await updateCurrentBranch(config.apiBaseUrl);
       setGitOutput(output);
-      await fetchLocalBranches(true);
+      
       toast.success('Branch updated successfully', {
         description: 'The current branch has been updated.',
       });
+      
+      setTimeout(() => {
+        fetchLocalBranches(true);
+      }, 100);
     } catch (error) {
       toast.error('Failed to update branch');
       console.error(error);
@@ -157,8 +180,12 @@ export const useGitOperations = () => {
     try {
       const output = await cleanupBranches(config.apiBaseUrl);
       setGitOutput(output);
-      await fetchLocalBranches(true);
+      
       toast.success('Stale branches removed');
+      
+      setTimeout(() => {
+        fetchLocalBranches(true);
+      }, 100);
     } catch (error) {
       toast.error('Failed to clean up branches');
       console.error(error);
