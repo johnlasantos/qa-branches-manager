@@ -203,7 +203,7 @@ export const useGitOperations = () => {
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
-      toast.success('Stale branches removed');
+      toast.success('Deprecated branches removed');
       
       // Refresh local branches in the background without blocking UI
       setTimeout(() => {

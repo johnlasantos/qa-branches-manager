@@ -219,7 +219,8 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
       </div>
       {showSuggestions && filteredBranches.length > 0 && (
         <div 
-          className="search-results mt-1 absolute left-0 bg-white border border-gray-200 rounded shadow-lg z-50 w-full" 
+          className="search-results mt-1 absolute left-0 bg-white border border-gray-200 rounded shadow-lg z-50" 
+          style={{ width: inputRef.current?.offsetWidth }}
         >
           <div className="py-1 text-xs text-gray-500 px-3 border-b flex items-center">
             <span>Remote branches</span>
