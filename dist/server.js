@@ -1,3 +1,4 @@
+
 const express = require('express');
 const cors = require('cors');
 const { exec } = require('child_process');
@@ -10,6 +11,9 @@ const execAsync = util.promisify(exec);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Environment detection
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
 // Middleware
 app.use(cors());
@@ -33,7 +37,9 @@ try {
   } else {
     // Create default config file if it doesn't exist
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-    console.log(`Created default config file at ${configPath}`);
+    if (isDevelopment) {
+      console.log(`Created default config file at ${configPath}`);
+    }
   }
 } catch (error) {
   console.error('Error loading config:', error);
@@ -62,7 +68,9 @@ async function runGitCommand(command) {
 // If in production mode, serve static files from the manager directory
 if (isProduction) {
   const managerPath = path.join(__dirname, 'manager');
-  console.log(`Serving static files from: ${managerPath}`);
+  if (isDevelopment) {
+    console.log(`Serving static files from: ${managerPath}`);
+  }
   app.use(express.static(managerPath));
   
   // Explicitly serve the config.json file for the frontend to fetch
@@ -497,11 +505,16 @@ if (isProduction) {
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Git Branch Manager ${isProduction ? 'Production' : 'Development'} Server running on port ${PORT}`);
-  console.log(`Using repository at: ${path.resolve(config.repositoryPath)}`);
-  console.log(`API Base URL: ${config.apiBaseUrl}`);
-  console.log(`Base Path: ${config.basePath}`);
-  if (isProduction) {
-    console.log(`Serving frontend from: ${path.join(__dirname, 'public')}`);
+  // Only log details in development mode or on initial startup
+  if (isDevelopment) {
+    console.log(`Git Branch Manager ${isProduction ? 'Production' : 'Development'} Server running on port ${PORT}`);
+    console.log(`Using repository at: ${path.resolve(config.repositoryPath)}`);
+    console.log(`API Base URL: ${config.apiBaseUrl}`);
+    console.log(`Base Path: ${config.basePath}`);
+    if (isProduction) {
+      console.log(`Serving frontend from: ${path.join(__dirname, 'public')}`);
+    }
+  } else {
+    console.log(`Git Branch Manager Server running on port ${PORT}`);
   }
 });
