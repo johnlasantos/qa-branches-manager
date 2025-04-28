@@ -1,7 +1,7 @@
 
 {
-  "repositoryPath": "C:/Program Files/Workspace/wwwroot/scriptcase-git",
-  "headerLink": "http://127.0.0.1/scriptcase-git/",
+  "repositoryPath": ".",
+  "headerLink": "https://project.domain.com/",
   "basePath": "/",
-  "apiBaseUrl": "http://127.0.0.1:3001/"
+  "apiBaseUrl": "https://api.domain.com/"
 }
