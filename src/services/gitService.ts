@@ -9,8 +9,6 @@ const apiRequest = async (endpoint: string, apiBaseUrl: string = '', options?: R
     const baseUrl = apiBaseUrl ? apiBaseUrl.replace(/\/$/, '') : '';
     const url = `${baseUrl}/${endpoint}`;
     
-    console.log(`Making request to: ${url}`);
-    
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -26,7 +24,9 @@ const apiRequest = async (endpoint: string, apiBaseUrl: string = '', options?: R
 
     return response.json();
   } catch (error) {
-    console.error('API request failed:', error);
+    if (import.meta.env.DEV) {
+      console.error('API request failed:', error);
+    }
     throw error;
   }
 };
@@ -96,8 +96,8 @@ export const cleanupBranches = async (apiBaseUrl: string = ''): Promise<string> 
     method: 'POST'
   });
   
-  // Handle possible warnings in the response
-  if (data.warnings && data.warnings.length > 0) {
+  // Handle possible warnings in the response but only in dev mode
+  if (import.meta.env.DEV && data.warnings && data.warnings.length > 0) {
     console.warn('Cleanup warnings:', data.warnings);
   }
   

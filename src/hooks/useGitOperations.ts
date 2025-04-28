@@ -231,7 +231,7 @@ export const useGitOperations = () => {
       setRemoteBranchesTotal(response.pagination.total);
       setRemoteBranchesPage(1);
     } catch (error) {
-      // Error handling without logging
+      // Silent error handling
     }
   };
 
