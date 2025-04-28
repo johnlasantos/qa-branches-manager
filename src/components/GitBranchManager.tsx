@@ -54,7 +54,7 @@ const GitBranchManager: React.FC = () => {
   return (
     <>
       <TopProgressBar isLoading={isLoading} />
-      <div className="container mx-auto px-4 py-6 max-w-7xl h-[calc(100vh-8rem)] flex flex-col">
+      <div className="container mx-auto px-4 py-6 max-w-7xl h-screen flex flex-col overflow-hidden">
         <GitHeader />
         
         <div className="pt-2">
@@ -86,15 +86,15 @@ const GitBranchManager: React.FC = () => {
               onScrollEnd={fetchMoreLocalBranches}
               hasMore={localBranchesHasMore}
               onReloadLocalBranches={triggerReloadLocalBranches}
-              className="flex-1"
+              className="flex-1 overflow-hidden"
             />
           </div>
           
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 overflow-hidden">
             <GitOutput output={gitOutput} className="h-full" />
           </div>
         </div>
-        <Footer />
+        <Footer className="mt-4" />
       </div>
     </>
   );

@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { AlertTriangle, ArrowLeftRight, Trash2, RefreshCw, Search, RefreshCcw } from 'lucide-react';
+
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { AlertTriangle, ArrowLeftRight, Trash2, Search, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -25,8 +26,8 @@ import {
 
 export interface Branch {
   name: string;
-  isCurrent?: boolean; // Make this optional to handle both "isCurrent" and "current" fields
-  current?: boolean; // Add this to handle API response with "current" field
+  isCurrent?: boolean;
+  current?: boolean;
   hasRemote: boolean;
 }
 
@@ -39,8 +40,8 @@ interface BranchListProps {
   hasMore?: boolean;
   className?: string;
   isLoading?: boolean;
-  isUpdatingCurrentBranch?: boolean; // New prop for tracking current branch updates specifically
-  onReloadLocalBranches?: () => void; // New prop for reloading branches
+  isUpdatingCurrentBranch?: boolean;
+  onReloadLocalBranches?: () => void;
 }
 
 const BranchList: React.FC<BranchListProps> = ({ 
@@ -60,9 +61,9 @@ const BranchList: React.FC<BranchListProps> = ({
   const [showUpdateDialog, setShowUpdateDialog] = useState<boolean>(false);
   const [openTooltips, setOpenTooltips] = useState<Record<string, boolean>>({});
   
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const observer = useRef<IntersectionObserver | null>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef<HTMLDivElement>(null);
+  const observer = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
     if (isLoading || isUpdatingCurrentBranch) {
@@ -100,31 +101,41 @@ const BranchList: React.FC<BranchListProps> = ({
     branch.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  useEffect(() => {
-    if (!hasMore || !onScrollEnd) return;
-
-    observer.current = new IntersectionObserver(entries => {
-      const [entry] = entries;
-      if (entry.isIntersecting && hasMore && !isLoading) {
-        onScrollEnd();
-      }
-    }, { threshold: 0.5 });
-
-    const currentLoadingRef = loadingRef.current;
-    if (currentLoadingRef) {
-      observer.current.observe(currentLoadingRef);
+  // Set up infinite scroll
+  const setupIntersectionObserver = useCallback(() => {
+    if (!hasMore || !onScrollEnd || !loadingRef.current) return;
+    
+    // Clean up previous observer if it exists
+    if (observer.current) {
+      observer.current.disconnect();
     }
+    
+    observer.current = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && hasMore && !isLoading) {
+          onScrollEnd();
+        }
+      },
+      { threshold: 0.5 }
+    );
+    
+    observer.current.observe(loadingRef.current);
+  }, [hasMore, onScrollEnd, isLoading]);
 
+  useEffect(() => {
+    setupIntersectionObserver();
+    
     return () => {
-      if (currentLoadingRef && observer.current) {
-        observer.current.unobserve(currentLoadingRef);
+      if (observer.current) {
+        observer.current.disconnect();
       }
     };
-  }, [hasMore, onScrollEnd, isLoading]);
+  }, [setupIntersectionObserver, filteredBranches.length]);
 
   if (isLoading && branches.length === 0) {
     return (
-      <div className={cn("w-full h-96", className)}>
+      <div className={cn("w-full", className)}>
         <div className="animate-pulse space-y-3">
           {[1, 2, 3, 4, 5].map((item) => (
             <div key={item} className="h-14 bg-gray-200 rounded"></div>
@@ -180,8 +191,8 @@ const BranchList: React.FC<BranchListProps> = ({
         )}
       </div>
 
-      <ScrollArea className="flex-1 h-[calc(100vh-20rem)] overflow-hidden">
-        <div ref={scrollRef} className="space-y-2 pr-4">
+      <ScrollArea ref={scrollAreaRef} className="h-[calc(100vh-24rem)] overflow-auto pr-2 flex-1">
+        <div className="space-y-2">
           {filteredBranches.map((branch) => (
             <div 
               key={branch.name}
@@ -427,12 +438,13 @@ const BranchList: React.FC<BranchListProps> = ({
             </div>
           ))}
           
+          {/* Loading indicator for infinite scroll */}
           {hasMore && (
             <div ref={loadingRef} className="py-4 flex justify-center">
               {isLoading ? (
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
               ) : (
-                <div className="h-5 w-5"></div>
+                <div className="h-5 w-5"></div> // Invisible element for intersection observer
               )}
             </div>
           )}

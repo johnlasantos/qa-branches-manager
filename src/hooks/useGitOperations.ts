@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Branch } from '@/components/BranchList';
@@ -27,6 +28,7 @@ export const useGitOperations = () => {
   const [remoteBranchesTotal, setRemoteBranchesTotal] = useState<number>(0);
   const [reloadTrigger, setReloadTrigger] = useState<number>(0);
 
+  // Load initial set or reset branches
   const fetchLocalBranches = useCallback(async (reset = true) => {
     try {
       setIsLoading(true);
@@ -34,7 +36,8 @@ export const useGitOperations = () => {
       // If reset, start from page 0, otherwise continue with next page
       const page = reset ? 0 : localBranchesPage;
       
-      const response = await getLocalBranches(page, 20, config.apiBaseUrl);
+      // Load branches in groups of 10
+      const response = await getLocalBranches(page, 10, config.apiBaseUrl);
       
       if (reset) {
         setLocalBranches(response.branches);
@@ -57,6 +60,7 @@ export const useGitOperations = () => {
     }
   }, [localBranchesPage, config.apiBaseUrl]);
 
+  // Load more local branches on scroll
   const fetchMoreLocalBranches = async () => {
     if (isLoading || !localBranchesHasMore) return;
     await fetchLocalBranches(false);
@@ -67,10 +71,12 @@ export const useGitOperations = () => {
     fetchLocalBranches(true);
   };
 
+  // Load remote branches with pagination
   const fetchRemoteBranches = useCallback(async (reset = true) => {
     try {
       const page = reset ? 0 : remoteBranchesPage;
-      const response = await getRemoteBranches(page, 20, config.apiBaseUrl);
+      // Load branches in groups of 10
+      const response = await getRemoteBranches(page, 10, config.apiBaseUrl);
       
       if (reset) {
         setRemoteBranches(response.branches);
