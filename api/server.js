@@ -50,7 +50,7 @@ async function runGitCommand(command) {
   try {
     const { stdout, stderr } = await execAsync(command, { 
       cwd: config.repositoryPath,
-      windowsHide: true // 👈 Aqui adiciona essa configuração
+      windowsHide: true
     });
     return { success: true, output: stdout, error: stderr };
   } catch (error) {
