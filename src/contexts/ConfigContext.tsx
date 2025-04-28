@@ -36,8 +36,10 @@ export const ConfigProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // Use config.json as a static file in production
         // This works better with Apache serving static files
         const configUrl = isDev ? '/api/config' : '../config.json';
-        
-        console.log('Fetching config from:', configUrl);
+
+        if (isDev && !configUrl) {
+          console.log('Fetching config from:', configUrl);
+        }
         const response = await fetch(configUrl);
         
         if (!response.ok) {
