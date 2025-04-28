@@ -68,7 +68,6 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
       return notInLocal && notSymbolicRef && matchesSearch;
     });
 
-  // Effect to handle loading more branches with proper spinner timing
   useEffect(() => {
     if (!onScrollEnd) return;
 
@@ -76,11 +75,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
       const [entry] = entries;
       if (entry.isIntersecting && showSuggestions) {
         setIsLoadingMore(true);
-        
-        // Call onScrollEnd and keep loading indicator visible until data arrives
         onScrollEnd();
-        
-        // We'll set isLoadingMore to false when remoteBranches changes
       }
     }, { threshold: 0.1 });
 
@@ -96,11 +91,8 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
     };
   }, [onScrollEnd, showSuggestions]);
   
-  // Effect to turn off loading state when new branches arrive
   useEffect(() => {
-    // When remoteBranches change, we can assume loading has completed
     if (isLoadingMore) {
-      // Add a small delay to ensure UI updates smoothly
       const timer = setTimeout(() => {
         setIsLoadingMore(false);
       }, 300);
@@ -227,8 +219,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
       </div>
       {showSuggestions && filteredBranches.length > 0 && (
         <div 
-          className="search-results mt-1 absolute left-0 bg-white border border-gray-200 rounded shadow-lg z-50" 
-          style={{ width: inputRef.current?.offsetWidth }}
+          className="search-results mt-1 absolute left-0 bg-white border border-gray-200 rounded shadow-lg z-50 w-full" 
         >
           <div className="py-1 text-xs text-gray-500 px-3 border-b flex items-center">
             <span>Remote branches</span>
@@ -239,8 +230,8 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
               <Loader className="h-3 w-3 text-blue-500 animate-spin ml-2" />
             )}
           </div>
-          <ScrollArea className="relative overflow-auto max-h-56">
-            <ul>
+          <ScrollArea className="h-[calc(100vh-24rem)] max-h-56 overflow-auto">
+            <ul className="space-y-2 p-2">
               {filteredBranches.map((branch) => (
                 <li
                   key={branch.name}

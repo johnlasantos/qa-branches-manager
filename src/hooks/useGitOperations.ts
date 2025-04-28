@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Branch } from '@/components/BranchList';
@@ -54,7 +53,6 @@ export const useGitOperations = () => {
       return response;
     } catch (error) {
       toast.error('Failed to load local branches');
-      console.error(error);
       setIsLoading(false);
       return null;
     }
@@ -91,7 +89,6 @@ export const useGitOperations = () => {
       return response;
     } catch (error) {
       toast.error('Failed to load remote branches');
-      console.error(error);
       return null;
     }
   }, [remoteBranchesPage, config.apiBaseUrl]);
@@ -140,7 +137,6 @@ export const useGitOperations = () => {
       // Important: Set loading to false immediately in case of error
       setIsLoading(false);
       toast.error(`Failed to switch to ${branchName}`);
-      console.error(error);
       fetchLocalBranches(true);
     }
   };
@@ -170,7 +166,6 @@ export const useGitOperations = () => {
       // Important: Set loading to false immediately in case of error
       setIsLoading(false);
       toast.error(`Failed to delete ${branchName}`);
-      console.error(error);
       fetchLocalBranches(true);
     }
   };
@@ -196,7 +191,6 @@ export const useGitOperations = () => {
       // Important: Set loading to false immediately in case of error
       setIsLoading(false);
       toast.error('Failed to update branch');
-      console.error(error);
     }
   };
 
@@ -219,7 +213,6 @@ export const useGitOperations = () => {
       // Important: Set loading to false immediately in case of error
       setIsLoading(false);
       toast.error('Failed to clean up branches');
-      console.error(error);
     }
   };
 
@@ -238,7 +231,7 @@ export const useGitOperations = () => {
       setRemoteBranchesTotal(response.pagination.total);
       setRemoteBranchesPage(1);
     } catch (error) {
-      console.error(error);
+      // Error handling without logging
     }
   };
 
