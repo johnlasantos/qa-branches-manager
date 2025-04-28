@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AlertTriangle, ArrowLeftRight, Trash2, Search, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -101,11 +100,9 @@ const BranchList: React.FC<BranchListProps> = ({
     branch.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Set up infinite scroll
   const setupIntersectionObserver = useCallback(() => {
     if (!hasMore || !onScrollEnd || !loadingRef.current) return;
     
-    // Clean up previous observer if it exists
     if (observer.current) {
       observer.current.disconnect();
     }
@@ -250,7 +247,7 @@ const BranchList: React.FC<BranchListProps> = ({
                                   variant="secondary"
                                   className="flex items-center bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
                                 >
-                                  <RefreshCw size={16} className={isUpdatingCurrentBranch ? "animate-spin" : ""} />
+                                  <RefreshCcw size={16} className={isUpdatingCurrentBranch ? "animate-spin" : ""} />
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
@@ -438,13 +435,12 @@ const BranchList: React.FC<BranchListProps> = ({
             </div>
           ))}
           
-          {/* Loading indicator for infinite scroll */}
           {hasMore && (
             <div ref={loadingRef} className="py-4 flex justify-center">
               {isLoading ? (
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
               ) : (
-                <div className="h-5 w-5"></div> // Invisible element for intersection observer
+                <div className="h-5 w-5"></div>
               )}
             </div>
           )}

@@ -91,10 +91,10 @@ const GitBranchManager: React.FC = () => {
           </div>
           
           <div className="lg:col-span-1 overflow-hidden">
-            <GitOutput output={gitOutput} className="h-full" />
+            <GitOutput output={gitOutput} />
           </div>
         </div>
-        <Footer className="mt-4" />
+        <Footer />
       </div>
     </>
   );
