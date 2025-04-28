@@ -6,7 +6,7 @@ import BranchList from '@/components/BranchList';
 import BranchSearch from '@/components/BranchSearch';
 import GitOutput from '@/components/GitOutput';
 import BranchCleanupButton from './BranchCleanupButton';
-import LoadingOverlay from './LoadingOverlay';
+import TopProgressBar from './TopProgressBar';
 import Footer from './Footer';
 import { useGitOperations } from '@/hooks/useGitOperations';
 import { useConfig } from '@/contexts/ConfigContext';
@@ -53,7 +53,7 @@ const GitBranchManager: React.FC = () => {
 
   return (
     <>
-      {isLoading && <LoadingOverlay />}
+      <TopProgressBar isLoading={isLoading} />
       <div className="container mx-auto px-4 py-6 max-w-7xl h-[calc(100vh-8rem)] overflow-hidden flex flex-col">
         <GitHeader />
         
@@ -100,3 +100,4 @@ const GitBranchManager: React.FC = () => {
 };
 
 export default GitBranchManager;
+
