@@ -68,7 +68,7 @@ try {
   const indexHtmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta http-equiv="refresh" content="0; url=${config.basePath}" />
+  <meta http-equiv="refresh" content="0; url=manager" />
   <title>Redirecting...</title>
 </head>
 <body>
