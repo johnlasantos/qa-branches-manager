@@ -1,117 +1,102 @@
-
 # Git Branch Manager - Backend API
 
 ![Node.js](https://img.shields.io/badge/Node.js-14+-green)
 ![Express](https://img.shields.io/badge/Express-4.x-blue)
 ![PM2](https://img.shields.io/badge/PM2-Supported-blue)
 
-The backend API for Git Branch Manager, providing Git operations through a RESTful interface.
+API backend for Git Branch Manager, providing Git operations through a clean REST API.
 
-## 📋 Overview
+---
 
-This Express.js application provides API endpoints to:
+## 📋 What It Does
 
-- List local and remote Git branches
-- Checkout branches
-- Delete branches
+- List local and remote branches
+- Switch branches
+- Delete local branches
 - Clean up stale branches
-- Pull latest changes from remote repositories
-- Serve the frontend application in production mode
+- Pull updates
+- Serve the frontend in production
+
+---
 
 ## 🚀 Getting Started
 
-### Prerequisites
+### Requirements
 
-- [Node.js](https://nodejs.org/) (v14 or higher)
-- [Git](https://git-scm.com/) installed and in your PATH
-- Access to a Git repository that you want to manage
+- [Node.js](https://nodejs.org/) (v14+)
+- [Git](https://git-scm.com/) installed and in PATH
+- A Git repository to manage
 
-### Development Setup
+### Setup
 
-1. Navigate to the API directory:
-   ```bash
-   cd api
-   ```
+```bash
+# Go to API folder
+cd api
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+# Install dependencies
+npm install
 
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
+# Start development server
+npm run dev
+```
 
-4. The API will be available at:
-   ```
-   http://localhost:3001/
-   ```
+API available at: [http://localhost:3001/](http://localhost:3001/)
+
+---
 
 ## 📦 API Endpoints
 
 | Endpoint | Method | Description |
-|:---|:---|:---|
-| `/config` | GET | Get API configuration |
-| `/branches` | GET | List local branches with pagination |
-| `/remote-branches` | GET | List remote branches with pagination |
+|:---------|:------|:------------|
+| `/config` | GET | Get config info |
+| `/branches` | GET | List local branches (paginated) |
+| `/remote-branches` | GET | List remote branches (paginated) |
 | `/remote-branches/search` | GET | Search remote branches |
-| `/checkout` | POST | Switch to a branch |
-| `/delete-branch` | POST | Delete a local branch |
-| `/pull` | POST | Pull latest changes for current branch |
-| `/cleanup` | POST | Remove stale local branches |
-| `/status` | GET | Get Git repository status |
+| `/checkout` | POST | Switch to branch |
+| `/delete-branch` | POST | Delete a branch |
+| `/pull` | POST | Pull latest changes |
+| `/cleanup` | POST | Clean stale branches |
+| `/status` | GET | Get repo status |
 
 ### Pagination
 
-Branch endpoints support pagination with query parameters:
-- `page`: Page number (default: 0)
-- `limit`: Items per page (default: 10)
+Use `page` and `limit` query parameters:
 
-Example:
-```
+```bash
 GET /branches?page=0&limit=20
 ```
 
+---
+
 ## ⚙️ Configuration
 
-The API uses a `config.json` file in the project root with the following structure:
+Edit `config.json`:
 
 ```json
 {
-  "repositoryPath": "/path/to/your/git/repository",
+  "repositoryPath": "/path/to/git/repo",
   "headerLink": "https://project.domain.com/",
   "basePath": "/",
   "apiBaseUrl": "https://api.domain.com/"
 }
 ```
 
-- **repositoryPath**: Path to the Git repository to manage (required)
-- Other fields are primarily for frontend configuration
+Only `repositoryPath` is required.
 
-## 🔧 Production Deployment
+---
 
-### Using PM2 (Recommended)
+## 🔧 Deploying in Production
 
-PM2 is recommended for production deployment to ensure reliability and automatic restarts:
+### Using PM2
 
 ```bash
-# Install PM2 globally
 npm install -g pm2
-
-# Start the API server
 pm2 start server.js --name branches-manager-api
-
-# Save the PM2 configuration
 pm2 save
-
-# Set up PM2 to start on system boot
 pm2 startup
 ```
 
-### PM2 Environment Variables
-
-If needed, set environment variables for PM2:
+Optionally set environment variables:
 
 ```bash
 pm2 start server.js --name branches-manager-api --env production
@@ -119,74 +104,53 @@ pm2 start server.js --name branches-manager-api --env production
 
 ### Windows Service with NSSM
 
-For Windows servers, you can use NSSM to run the API as a service:
+1. Use included `nssm.exe`
+2. Set up NSSM to run `pm2 resurrect`
+3. Configure user and PM2_HOME variable
+4. Start the service
 
-1. Use the included `nssm.exe`:
-   ```bash
-   nssm install branches-manager-api
-   ```
-
-2. In the NSSM configuration UI:
-   - **Application Path**: Path to your `pm2.cmd` (e.g., `C:\Users\Administrator\AppData\Roaming\npm\pm2.cmd`)
-   - **Arguments**: `resurrect`
-   - **Startup Directory**: Folder containing `pm2.cmd` or project folder
-   - **Log On**: Set to user account that has Git access
-   - **Environment**: Add `PM2_HOME` variable pointing to PM2 home directory
-
-3. Start the service:
-   ```bash
-   nssm start branches-manager-api
-   ```
+---
 
 ## 📤 Unified Build
 
-The project includes a `build.cjs` script that creates a unified distribution package:
+Create production-ready package:
 
-1. Run from the project root:
-   ```bash
-   node build.cjs
-   ```
+```bash
+node build.cjs
+```
 
-2. The distribution package will be created in the `dist` folder with:
-   - Built frontend (`manager` directory)
-   - Backend server (`server.js`)
-   - Configuration file (`config.json`)
-   - NSSM executable for Windows service setup (`nssm.exe`)
-   - Package dependencies (`package.json`)
+Will generate the `dist/` folder with:
+
+- Frontend build
+- Backend server
+- Config file
+- NSSM executable (for Windows services)
+- Package dependencies
+
+---
 
 ## 🔍 Troubleshooting
 
-### Common Issues
+- **Git errors**: Check if Git is installed and available in PATH
+- **Invalid repository**: Verify `repositoryPath` points to a real repo
+- **Permission issues**: Node.js must have access rights
+- **NSSM problems**: Check PM2_HOME setup
 
-- **Git Command Failures**: Ensure Git is installed and in the PATH of the system running the API
-- **Repository Path Not Found**: Check the `repositoryPath` in `config.json` points to a valid Git repository
-- **Permission Issues**: Ensure the Node.js process has permissions to access the Git repository
-- **Windows Service Not Starting**: Verify PM2_HOME environment variable in NSSM configuration
-
-### Command Reference
-
-Useful commands for managing the API:
+Useful commands:
 
 ```bash
-# View API logs
 pm2 logs branches-manager-api
-
-# Restart API
 pm2 restart branches-manager-api
-
-# Stop API
 pm2 stop branches-manager-api
-
-# Check process status
 pm2 status
 ```
 
+---
+
 ## 🛠️ Error Handling
 
-The API includes error handling for Git operations:
+- Git command errors are logged and returned as clean error responses
+- 400 for invalid requests
+- 500 for server errors (details hidden in production)
 
-- Git command failures are logged and returned as error responses
-- Invalid requests return appropriate 400-level status codes
-- Server errors return 500-level status codes with error messages
-
-In production, detailed error information is restricted to avoid exposing sensitive details.
+---

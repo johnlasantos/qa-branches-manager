@@ -1,4 +1,3 @@
-
 # Git Branch Manager - Frontend
 
 ![React](https://img.shields.io/badge/React-18.x-blue)
@@ -6,121 +5,103 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-Latest-blue)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC)
 
-The frontend application for Git Branch Manager built with React, Vite, TypeScript, and Tailwind CSS.
+A simple and powerful frontend for Git Branch Manager, built with React, Vite, TypeScript, and Tailwind CSS.
 
-## 📋 Overview
+---
 
-This frontend provides an intuitive user interface for managing Git branches with features including:
+## 📋 What You Can Do
 
-- Viewing and searching both local and remote branches
-- Switching between branches with status feedback
-- Deleting and cleaning up unused branches
-- Pulling latest changes from remote repositories
+- Browse and search local and remote branches
+- Switch between branches with live feedback
+- Delete unused branches easily
+- Pull updates from remote repositories
+
+---
 
 ## 🚀 Getting Started
 
-### Prerequisites
+### Requirements
 
-- [Node.js](https://nodejs.org/) (v14 or higher)
+- [Node.js](https://nodejs.org/) (v14+)
 - [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
 
-### Development Setup
+### Setup for Development
 
-1. Navigate to the project root directory
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
-4. Access the development server at:
-   ```
-   http://localhost:8080/
-   ```
+```bash
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
+```
+
+Open: [http://localhost:8080/](http://localhost:8080/)
+
+---
 
 ## 🛠️ Building for Production
-
-To build the frontend for production:
 
 ```bash
 npm run build
 ```
 
-This will generate optimized files in the `dist/manager` directory.
+This generates optimized files in the `dist/manager` directory.
 
-## 📦 Project Structure
+---
+
+## 📦 Project Layout
 
 ```
 src/
-├── components/         # React components
-│   ├── ui/             # Shadcn UI components
-│   └── ...             # Application-specific components
-├── contexts/           # React contexts
-├── hooks/              # Custom React hooks
-├── lib/                # Utility functions
-├── pages/              # Page components
-├── services/           # API service layer
-├── App.tsx             # Main application component
-└── main.tsx            # Application entry point
+├── components/    # React components
+│   └── ui/        # Shadcn UI components
+├── contexts/      # Context providers
+├── hooks/         # Custom hooks
+├── lib/           # Helper libraries
+├── pages/         # Pages
+├── services/      # API services
+├── App.tsx        # Main app component
+└── main.tsx       # Entry point
 ```
 
-## ⚙️ Key Components
+---
 
-### GitBranchManager
+## ⚙️ How It Works
 
-The main component that orchestrates the branch management interface.
+- **GitBranchManager**: main logic for branch management
+- **BranchList & BranchSearch**: view and filter branches
+- **ConfigContext**: load app settings
+- **GitService**: connect to backend API
 
-### BranchList & BranchSearch
+Configuration is fetched:
+- Development: `/api/config`
+- Production: `../config.json`
 
-Components for displaying and interacting with local and remote branches.
+---
 
-### ConfigContext
+## 🧪 Dev Tips
 
-Provides application configuration to all components, loading from the backend.
+- Powered by Vite for fast HMR (Hot Module Replacement)
+- Development API calls are proxied automatically
+- Use `import.meta.env.DEV` to detect environment
 
-### GitService
+---
 
-Service for making API calls to the backend Git operations.
+## 💪 Adding Features
 
-## 🔧 Configuration
+1. Add components under `components/`
+2. Add services in `services/` if new API calls are needed
+3. Update `GitBranchManager` to wire it all together
+4. Update contexts if configs are involved
 
-The frontend uses a configuration loaded from the backend API. In development mode, this is fetched from:
-
-```
-/api/config
-```
-
-In production, it's loaded from:
-
-```
-../config.json
-```
-
-## 🧪 Development Tips
-
-- The application uses Vite for fast development and hot module replacement
-- API calls in development are proxied through the Vite server to avoid CORS issues
-- Environment mode checking uses `import.meta.env.DEV` to differentiate development and production
-
-## 💪 Extending the Application
-
-To add new features:
-
-1. Create new components in the `components` directory
-2. Add new API methods in `services/gitService.ts` if needed
-3. Incorporate the new functionality in the main `GitBranchManager` component
-4. Update the relevant context providers if configuration changes are needed
+---
 
 ## 🔍 Troubleshooting
 
-### Common Issues
+- **API Errors**: Ensure backend is running and API URL is set
+- **Git Errors**: Confirm Git is installed and available in PATH
+- **CSS Issues**: Check Tailwind configuration
 
-- **API Connection Errors**: Check that the backend server is running and the API URL is correctly set in config
-- **Git Command Failures**: Ensure Git is installed and in the PATH of the system running the backend
-- **Styling Issues**: Check Tailwind classes and the component import order
+Use React DevTools and browser console for easy debugging.
 
-### Dev Tools
-
-Use React Developer Tools and browser console for debugging. Console logs are conditionally displayed only in development mode.
+---
