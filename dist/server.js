@@ -518,3 +518,14 @@ app.listen(PORT, () => {
     console.log(`Git Branch Manager Server running on port ${PORT}`);
   }
 });
+
+// Warm up Git on server startup
+(async () => {
+  console.log("Warming up Git...");
+  const result = await runGitCommand("git status");
+  if (result.success) {
+    console.log("Git warm-up completed.");
+  } else {
+    console.warn("Git warm-up failed:", result.error);
+  }
+})();
