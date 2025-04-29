@@ -1,79 +1,159 @@
 
-# Welcome to your Lovable project
+# Git Branch Manager
 
-## Project info
+![Git Branch Manager](https://img.shields.io/badge/Branch-Manager-blue)
+![Version](https://img.shields.io/badge/version-1.0.0-green)
+![License](https://img.shields.io/badge/license-MIT-blue)
 
-**URL**: https://lovable.dev/projects/0499bb2d-ec14-4f53-8345-7030df67e79d
+A web application for managing Git branches across repositories with an easy-to-use interface.
 
-## How can I edit this code?
+## 📋 Overview
 
-**Use Lovable**
+Git Branch Manager provides a straightforward interface to perform common Git branch operations:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/0499bb2d-ec14-4f53-8345-7030df67e79d) and start prompting.
+- View local and remote branches
+- Switch between branches
+- Create branches from remote
+- Delete local branches
+- Clean up stale/deprecated branches
+- Pull latest changes from remote
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🚀 Quick Start
 
-**Use your preferred IDE**
+### Prerequisites
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- [Node.js](https://nodejs.org/) (v14 or higher)
+- [Git](https://git-scm.com/) installed and in your PATH
+- Access to a Git repository that you want to manage
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Installation
 
-Follow these steps:
+1. Clone the repository:
+   ```bash
+   git clone [repository-url]
+   cd git-branch-manager
+   ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+3. Build the unified package:
+   ```bash
+   node build.cjs
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+4. Navigate to the distribution directory and install dependencies:
+   ```bash
+   cd dist
+   npm install
+   ```
 
-# Step 4: Build the unified package
-node build.cjs
+5. Start the server:
+   ```bash
+   npm start
+   ```
 
-# Step 5: Navigate to the dist directory and install dependencies
-cd dist
-npm install
+6. Access the application:
+   - Frontend: `http://localhost:3001/manager/`
 
-# Step 6: Start the server
-npm start
+## 🛠️ Development
+
+For active development, you can run:
+
+```bash
+# In the project root:
+npm run dev
 ```
 
-**Edit a file directly in GitHub**
+This will start both:
+- Frontend development server (Vite)
+- Backend API server (ExpressJS)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📦 Project Structure
 
-**Use GitHub Codespaces**
+```
+git-branch-manager/
+├── api/                 # Backend API code
+├── src/                 # Frontend React application
+├── dist/                # Built application (after build.cjs)
+│   ├── manager/         # Built frontend
+│   ├── server.js        # Express server
+│   └── config.json      # Configuration file
+├── build.cjs            # Build script for unified package
+└── vite.config.ts       # Vite configuration
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## ⚙️ Configuration
 
-## What technologies are used for this project?
+The application uses a `config.json` file for runtime configuration. During build, a default config is generated with:
 
-This project is built with:
+```json
+{
+  "repositoryPath": ".",
+  "headerLink": "https://project.domain.com/",
+  "basePath": "/",
+  "apiBaseUrl": "https://api.domain.com/"
+}
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- **repositoryPath**: Path to the Git repository you want to manage
+- **headerLink**: URL for the header link/branding
+- **basePath**: Base URL path for the application
+- **apiBaseUrl**: URL to the API endpoint
 
-## How can I deploy this project?
+## 🔧 Production Deployment
 
-Simply open [Lovable](https://lovable.dev/projects/0499bb2d-ec14-4f53-8345-7030df67e79d) and click on Share -> Publish.
+### Manual Deployment
 
-## Can I connect a custom domain to my Lovable project?
+Deploy the application using a Node.js runtime:
 
-Yes, you can!
+1. Copy the `dist` directory to your server
+2. Install dependencies with `npm install`
+3. Update `config.json` with your specific configuration
+4. Start the server with `node server.js` or use PM2 (see below)
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### PM2 Deployment (Recommended)
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+For reliable production deployment, use PM2:
+
+```bash
+# Install PM2 globally
+npm install -g pm2
+
+# Start the application
+pm2 start server.js --name git-branch-manager
+
+# Make it auto-start on system reboot
+pm2 startup
+pm2 save
+```
+
+### Windows Service (Using NSSM)
+
+For Windows servers, you can set up a Windows service:
+
+1. Use the included `nssm.exe` in the dist folder
+2. Follow PM2 setup instructions in the API README
+
+## 📚 Documentation
+
+See the separate README files for more detailed information:
+
+- [Frontend Documentation](src/README.md)
+- [Backend API Documentation](api/README.md)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License.
