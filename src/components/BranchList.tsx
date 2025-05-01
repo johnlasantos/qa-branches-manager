@@ -196,7 +196,7 @@ const BranchList: React.FC<BranchListProps> = ({
               className={cn(
                 "branch-item p-3 rounded-md border", 
                 branch.isCurrent 
-                  ? "border-green-300 bg-green-50 hover:bg-green-100"
+                  ? "border-green-300 bg-green-50 hover:bg-green-50"
                   : "border-gray-200 hover:bg-gray-50"
               )}
             >
