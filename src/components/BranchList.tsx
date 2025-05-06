@@ -215,79 +215,82 @@ const BranchList: React.FC<BranchListProps> = ({
                 
                 <div className="flex space-x-2">
                   {branch.isCurrent ? (
-                    <TooltipProvider>
-                      <Tooltip 
-                        open={openTooltips[`update-${branch.name}`]} 
-                        onOpenChange={(open) => handleTooltipOpenChange(open, `update-${branch.name}`)}
-                      >
-                        <TooltipTrigger asChild>
-                          <span>
-                            <AlertDialog 
-                              open={showUpdateDialog} 
-                              onOpenChange={(isOpen) => {
-                                setShowUpdateDialog(isOpen);
-                                if (!isOpen) {
-                                  setOpenTooltips(prev => ({ 
-                                    ...prev, 
-                                    [`update-${branch.name}`]: false 
-                                  }));
-                                }
-                              }}
-                            >
-                              <AlertDialogTrigger asChild>
-                                <Button 
-                                  size="sm" 
-                                  onClick={() => {
-                                    setShowUpdateDialog(true);
+                    // Only show update button if the branch has a remote counterpart
+                    branch.hasRemote && (
+                      <TooltipProvider>
+                        <Tooltip 
+                          open={openTooltips[`update-${branch.name}`]} 
+                          onOpenChange={(open) => handleTooltipOpenChange(open, `update-${branch.name}`)}
+                        >
+                          <TooltipTrigger asChild>
+                            <span>
+                              <AlertDialog 
+                                open={showUpdateDialog} 
+                                onOpenChange={(isOpen) => {
+                                  setShowUpdateDialog(isOpen);
+                                  if (!isOpen) {
                                     setOpenTooltips(prev => ({ 
                                       ...prev, 
                                       [`update-${branch.name}`]: false 
                                     }));
-                                  }}
-                                  variant="secondary"
-                                  className="flex items-center bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
-                                >
-                                  <RefreshCcw size={16} className={isUpdatingCurrentBranch ? "animate-spin" : ""} />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>
-                                    Update current branch?
-                                  </AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This will fetch and update the current branch from its remote counterpart.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel onClick={() => {
-                                    setOpenTooltips(prev => ({ 
-                                      ...prev, 
-                                      [`update-${branch.name}`]: false 
-                                    }));
-                                  }}>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
+                                  }
+                                }}
+                              >
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    size="sm" 
                                     onClick={() => {
-                                      setShowUpdateDialog(false);
+                                      setShowUpdateDialog(true);
                                       setOpenTooltips(prev => ({ 
                                         ...prev, 
                                         [`update-${branch.name}`]: false 
                                       }));
-                                      onUpdateCurrentBranch();
                                     }}
+                                    variant="secondary"
+                                    className="flex items-center bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
                                   >
-                                    Update
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Update this branch</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                                    <RefreshCcw size={16} className={isUpdatingCurrentBranch ? "animate-spin" : ""} />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      Update current branch?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This will fetch and update the current branch from its remote counterpart.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel onClick={() => {
+                                      setOpenTooltips(prev => ({ 
+                                        ...prev, 
+                                        [`update-${branch.name}`]: false 
+                                      }));
+                                    }}>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => {
+                                        setShowUpdateDialog(false);
+                                        setOpenTooltips(prev => ({ 
+                                          ...prev, 
+                                          [`update-${branch.name}`]: false 
+                                        }));
+                                        onUpdateCurrentBranch();
+                                      }}
+                                    >
+                                      Update
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Update this branch</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )
                   ) : (
                     <>
                       <TooltipProvider>
