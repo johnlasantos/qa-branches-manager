@@ -24,7 +24,7 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
 
   // Process the output to apply color highlighting
   const processOutput = (text: string) => {
-    if (!text) return 'No output to display';
+    if (!text) return <span className="text-gray-500 italic">No recent command output</span>;
 
     return text.split('\n').map((line, index) => {
       // For lines indicating file changes with +/- summary at end
@@ -230,7 +230,7 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
   };
 
   return (
-    <div className={cn("w-full", className)}>
+    <div className={cn("w-full h-full flex flex-col", className)}>
       <div className="flex justify-between items-center mb-2">
         <h2 className="text-lg font-semibold">Command Output</h2>
         <Button 
@@ -244,8 +244,8 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
           <Copy className="h-4 w-4" />
         </Button>
       </div>
-      <ScrollArea className="h-[250px] rounded-md border">
-        <pre className="git-output text-sm p-4 whitespace-pre-wrap">
+      <ScrollArea className="flex-1 rounded-md border">
+        <pre className="git-output text-sm p-4 whitespace-pre-wrap h-full">
           {processOutput(output)}
         </pre>
       </ScrollArea>

@@ -116,7 +116,9 @@ export const useGitOperations = () => {
       
       // Perform the operation
       const output: GitOperationResponse = await switchBranch(branchName, config.apiBaseUrl);
-      setGitOutput(output.stdout || output.stderr || '');
+      // Always display the output (stdout or stderr) to the user
+      const displayOutput = output.stdout || output.stderr || '';
+      setGitOutput(displayOutput);
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
@@ -161,7 +163,9 @@ export const useGitOperations = () => {
       );
       
       const output: GitOperationResponse = await deleteBranch(branchName, config.apiBaseUrl);
-      setGitOutput(output.stdout || output.stderr || '');
+      // Always show complete output (stdout or stderr)
+      const displayOutput = output.stdout || output.stderr || '';
+      setGitOutput(displayOutput);
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
@@ -192,7 +196,9 @@ export const useGitOperations = () => {
     setGitOutput('');
     try {
       const output: GitOperationResponse = await updateCurrentBranch(config.apiBaseUrl);
-      setGitOutput(output.stdout || output.stderr || '');
+      // Always show complete output (stdout or stderr)
+      const displayOutput = output.stdout || output.stderr || '';
+      setGitOutput(displayOutput);
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
@@ -224,7 +230,9 @@ export const useGitOperations = () => {
     setGitOutput('');
     try {
       const output: GitOperationResponse = await cleanupBranches(config.apiBaseUrl);
-      setGitOutput(output.stdout || output.stderr || '');
+      // Always show complete output (stdout or stderr)
+      const displayOutput = output.stdout || output.stderr || '';
+      setGitOutput(displayOutput);
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);

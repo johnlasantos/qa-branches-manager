@@ -57,14 +57,18 @@ const GitBranchManager: React.FC = () => {
       <div className="container mx-auto px-4 py-6 max-w-7xl h-screen flex flex-col overflow-hidden">
         <GitHeader />
         
-        <div className="pt-2">
-          <BranchSearch 
-            remoteBranches={remoteBranches}
-            localBranches={localBranches}
-            onSearch={handleSearch}
-            onSelectRemoteBranch={handleSwitchBranch}
-            onScrollEnd={fetchMoreRemoteBranches}
-          />
+        <div className="flex flex-col w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 w-full">
+            <div className="lg:col-span-3">
+              <BranchSearch 
+                remoteBranches={remoteBranches}
+                localBranches={localBranches}
+                onSearch={handleSearch}
+                onSelectRemoteBranch={handleSwitchBranch}
+                onScrollEnd={fetchMoreRemoteBranches}
+              />
+            </div>
+          </div>
         </div>
         
         <Separator className="my-4" />
@@ -90,7 +94,7 @@ const GitBranchManager: React.FC = () => {
             />
           </div>
           
-          <div className="lg:col-span-1 overflow-hidden">
+          <div className="lg:col-span-1 overflow-hidden flex flex-col h-full">
             <GitOutput output={gitOutput} />
           </div>
         </div>

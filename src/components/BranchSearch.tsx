@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, ChevronDown, Loader } from 'lucide-react';
+import { ChevronDown, Loader } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -137,7 +138,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
   }, []);
 
   return (
-    <div className={cn("relative", className)} ref={searchRef}>
+    <div className={cn("relative w-full", className)} ref={searchRef}>
       <div className="relative">
         <Input
           ref={inputRef}
@@ -146,7 +147,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
           value={searchQuery}
           onChange={handleSearchChange}
           onFocus={handleInputFocus}
-          className="pr-9 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-input"
+          className="pr-9 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-input w-full"
           autoComplete="off"
         />
         <ChevronDown 
