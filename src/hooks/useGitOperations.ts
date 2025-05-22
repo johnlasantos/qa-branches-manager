@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Branch } from '@/components/BranchList';
@@ -117,9 +116,8 @@ export const useGitOperations = () => {
       // Perform the operation
       const output: GitOperationResponse = await switchBranch(branchName, config.apiBaseUrl);
       
-      // Always display the complete output (stdout or stderr) to the user, ensuring we never have a blank output
-      const displayOutput = output.stdout || output.stderr || 'Command completed with no output';
-      setGitOutput(displayOutput);
+      // Display exactly what Git returned - no artificial messages
+      setGitOutput(output.stdout || output.stderr || '');
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
@@ -165,9 +163,8 @@ export const useGitOperations = () => {
       
       const output: GitOperationResponse = await deleteBranch(branchName, config.apiBaseUrl);
       
-      // Always display the complete output (stdout or stderr) to the user
-      const displayOutput = output.stdout || output.stderr || 'Command completed with no output';
-      setGitOutput(displayOutput);
+      // Display exactly what Git returned - no artificial messages
+      setGitOutput(output.stdout || output.stderr || '');
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
@@ -199,9 +196,8 @@ export const useGitOperations = () => {
     try {
       const output: GitOperationResponse = await updateCurrentBranch(config.apiBaseUrl);
       
-      // Always display the complete output (stdout or stderr) to the user
-      const displayOutput = output.stdout || output.stderr || 'Command completed with no output';
-      setGitOutput(displayOutput);
+      // Display exactly what Git returned - no artificial messages
+      setGitOutput(output.stdout || output.stderr || '');
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
@@ -234,9 +230,8 @@ export const useGitOperations = () => {
     try {
       const output: GitOperationResponse = await cleanupBranches(config.apiBaseUrl);
       
-      // Always display the complete output (stdout or stderr) to the user
-      const displayOutput = output.stdout || output.stderr || 'Command completed with no output';
-      setGitOutput(displayOutput);
+      // Display exactly what Git returned - no artificial messages
+      setGitOutput(output.stdout || output.stderr || '');
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
