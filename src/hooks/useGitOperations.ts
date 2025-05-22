@@ -116,8 +116,9 @@ export const useGitOperations = () => {
       
       // Perform the operation
       const output: GitOperationResponse = await switchBranch(branchName, config.apiBaseUrl);
-      // Always display the output (stdout or stderr) to the user
-      const displayOutput = output.stdout || output.stderr || '';
+      
+      // Always display the complete output (stdout or stderr) to the user, ensuring we never have a blank output
+      const displayOutput = output.stdout || output.stderr || 'Command completed with no output';
       setGitOutput(displayOutput);
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
@@ -134,7 +135,7 @@ export const useGitOperations = () => {
           });
         }
       } else {
-        // Show an error toast with stderr if available
+        // Show an error toast with a more generic message
         toast.error(`Failed to switch to ${branchName}`);
       }
       
@@ -163,8 +164,9 @@ export const useGitOperations = () => {
       );
       
       const output: GitOperationResponse = await deleteBranch(branchName, config.apiBaseUrl);
-      // Always show complete output (stdout or stderr)
-      const displayOutput = output.stdout || output.stderr || '';
+      
+      // Always display the complete output (stdout or stderr) to the user
+      const displayOutput = output.stdout || output.stderr || 'Command completed with no output';
       setGitOutput(displayOutput);
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
@@ -196,8 +198,9 @@ export const useGitOperations = () => {
     setGitOutput('');
     try {
       const output: GitOperationResponse = await updateCurrentBranch(config.apiBaseUrl);
-      // Always show complete output (stdout or stderr)
-      const displayOutput = output.stdout || output.stderr || '';
+      
+      // Always display the complete output (stdout or stderr) to the user
+      const displayOutput = output.stdout || output.stderr || 'Command completed with no output';
       setGitOutput(displayOutput);
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
@@ -230,8 +233,9 @@ export const useGitOperations = () => {
     setGitOutput('');
     try {
       const output: GitOperationResponse = await cleanupBranches(config.apiBaseUrl);
-      // Always show complete output (stdout or stderr)
-      const displayOutput = output.stdout || output.stderr || '';
+      
+      // Always display the complete output (stdout or stderr) to the user
+      const displayOutput = output.stdout || output.stderr || 'Command completed with no output';
       setGitOutput(displayOutput);
       
       // Important: Set loading to false IMMEDIATELY before showing the toast

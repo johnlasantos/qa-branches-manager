@@ -78,6 +78,14 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
           </span>
         );
       }
+      // Highlight "Already up to date" message
+      else if (line.includes('Already up to date')) {
+        return (
+          <span key={index} className="text-[#FEF7CD] block font-medium">
+            {line}
+          </span>
+        );
+      }
       // Return normal line
       return (
         <span key={index} className="block">
