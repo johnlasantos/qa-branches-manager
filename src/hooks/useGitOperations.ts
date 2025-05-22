@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Branch } from '@/components/BranchList';
@@ -115,19 +114,25 @@ export const useGitOperations = () => {
       
       // Perform the operation
       const output = await switchBranch(branchName, config.apiBaseUrl);
-      setGitOutput(output);
+      setGitOutput(output.stdout || output.stderr || '');
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
       
-      if (opts && opts.imported) {
-        toast.success(`Local branch created: ${branchName}`, {
-          description: 'Branch imported from remote successfully.',
-        });
+      if (output.success) {
+        if (opts && opts.imported) {
+          toast.success(`Local branch created: ${branchName}`, {
+            description: 'Branch imported from remote successfully.',
+          });
+        } else {
+          toast.success(`Switched to branch: ${branchName}`, {
+            description: 'Branch change was successful.',
+          });
+        }
       } else {
-        toast.success(`Switched to branch: ${branchName}`, {
-          description: 'Branch change was successful.',
-        });
+        // Show an error toast with stderr if available
+        const errorMessage = output.stderr || `Failed to switch to ${branchName}`;
+        toast.error(`Failed to switch to ${branchName}`);
       }
       
       // Refresh local branches in the background without blocking UI
@@ -155,11 +160,17 @@ export const useGitOperations = () => {
       );
       
       const output = await deleteBranch(branchName, config.apiBaseUrl);
-      setGitOutput(output);
+      setGitOutput(output.stdout || output.stderr || '');
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
-      toast.success(`Deleted ${branchName}`);
+      
+      if (output.success) {
+        toast.success(`Deleted ${branchName}`);
+      } else {
+        // Show the error output
+        toast.error(`Failed to delete ${branchName}`);
+      }
       
       // Refresh local branches in the background without blocking UI
       setTimeout(() => {
@@ -180,13 +191,19 @@ export const useGitOperations = () => {
     setGitOutput('');
     try {
       const output = await updateCurrentBranch(config.apiBaseUrl);
-      setGitOutput(output);
+      setGitOutput(output.stdout || output.stderr || '');
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
-      toast.success('Branch updated successfully', {
-        description: 'The current branch has been updated.',
-      });
+      
+      if (output.success) {
+        toast.success('Branch updated successfully', {
+          description: 'The current branch has been updated.',
+        });
+      } else {
+        // Show the error output
+        toast.error('Failed to update branch');
+      }
       
       // Refresh local branches in the background without blocking UI
       setTimeout(() => {
@@ -206,11 +223,17 @@ export const useGitOperations = () => {
     setGitOutput('');
     try {
       const output = await cleanupBranches(config.apiBaseUrl);
-      setGitOutput(output);
+      setGitOutput(output.stdout || output.stderr || '');
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
-      toast.success('Deprecated branches removed');
+      
+      if (output.success) {
+        toast.success('Deprecated branches removed');
+      } else {
+        // Show the error output
+        toast.error('Failed to clean up branches');
+      }
       
       // Refresh local branches in the background without blocking UI
       setTimeout(() => {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, ChevronDown, Loader } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -16,6 +15,12 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export interface RemoteBranch {
   name: string;
@@ -203,27 +208,32 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
           <ScrollArea className="h-[calc(100vh-24rem)] max-h-56 overflow-auto">
             <ul className="space-y-2 p-2">
               {filteredBranches.map((branch) => (
-                <li
-                  key={branch.name}
-                  className={cn(
-                    "px-3 py-2 hover:bg-blue-50 flex items-center justify-between group cursor-pointer rounded",
-                    selectedBranch === branch.name
-                      ? "bg-blue-100 border border-blue-300"
-                      : ""
-                  )}
-                  onMouseDown={e => e.preventDefault()}
-                  onClick={() => handleBranchClick(branch.name)}
-                  tabIndex={0}
-                  aria-selected={selectedBranch === branch.name}
-                >
-                  <div className="flex items-center">
-                    <BranchIcon branchName={branch.name} hasRemote={true} className="mr-2" />
-                    <span>{branch.name}</span>
-                  </div>
-                  <span className="text-xs text-blue-700 opacity-0 group-hover:opacity-100">
-                    Import
-                  </span>
-                </li>
+                <TooltipProvider key={branch.name}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <li
+                        className={cn(
+                          "px-3 py-2 hover:bg-blue-50 flex items-center group cursor-pointer rounded",
+                          selectedBranch === branch.name
+                            ? "bg-blue-100 border border-blue-300"
+                            : ""
+                        )}
+                        onMouseDown={e => e.preventDefault()}
+                        onClick={() => handleBranchClick(branch.name)}
+                        tabIndex={0}
+                        aria-selected={selectedBranch === branch.name}
+                      >
+                        <div className="flex items-center">
+                          <BranchIcon branchName={branch.name} hasRemote={true} className="mr-2" />
+                          <span>{branch.name}</span>
+                        </div>
+                      </li>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Import this remote branch</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               ))}
               <li ref={loadingRef} className="h-4">
                 {/* Empty element for intersection observer */}
