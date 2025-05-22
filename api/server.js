@@ -58,12 +58,16 @@ async function runGitCommand(command) {
       cwd: config.repositoryPath,
       windowsHide: true
     });
-    return { success: true, output: stdout, error: stderr };
+    return { 
+      success: !stderr, 
+      output: stdout, 
+      error: stderr 
+    };
   } catch (error) {
     console.error(`Git command failed: ${command}`, error);
     return { 
       success: false, 
-      output: '', 
+      output: error.stdout || '', 
       error: error.stderr || error.message 
     };
   }
