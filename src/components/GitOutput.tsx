@@ -27,15 +27,22 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
     if (!text) return 'No output to display';
 
     return text.split('\n').map((line, index) => {
-      // Check if line indicates addition (starts with + or contains added)
-      if (line.startsWith('+') || line.includes('+++++')) {
+      // For lines indicating file changes with +/- summary at end
+      if (line.includes('|') && /\s[+-]+$/.test(line)) {
+        return processFileChangeLine(line, index);
+      }
+      // For summary lines like "X insertions(+), Y deletions(-)"
+      else if (line.includes('insertions(+)') || line.includes('deletions(-)')) {
+        return processSummaryLine(line, index);
+      }
+      // Standard +/- lines (beginning with + or -)
+      else if (line.startsWith('+') || line.includes('+++++')) {
         return (
           <span key={index} className="text-[#F2FCE2] block">
             {line}
           </span>
         );
       }
-      // Check if line indicates removal (starts with - or contains removed)
       else if (line.startsWith('-') || line.includes('-----')) {
         return (
           <span key={index} className="text-[#ea384c] block">
@@ -50,6 +57,154 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
         </span>
       );
     });
+  };
+
+  // Handle lines like "file.php | 23522 +++++++++----------"
+  const processFileChangeLine = (line: string, index: number) => {
+    const parts = line.split('|');
+    if (parts.length < 2) return <span key={index} className="block">{line}</span>;
+
+    const filePath = parts[0];
+    let changes = parts[1];
+    
+    // Find position where +/- symbols start
+    const symbolsStartPos = changes.search(/[+-]/);
+    if (symbolsStartPos === -1) return <span key={index} className="block">{line}</span>;
+    
+    const beforeSymbols = changes.substring(0, symbolsStartPos);
+    const symbols = changes.substring(symbolsStartPos);
+    
+    return (
+      <span key={index} className="block">
+        {filePath}|{beforeSymbols}
+        {highlightPlusMinusSymbols(symbols)}
+      </span>
+    );
+  };
+
+  // Handle summary lines like "8 files changed, 12870 insertions(+), 12711 deletions(-)"
+  const processSummaryLine = (line: string, index: number) => {
+    // Replace insertions(+) with highlighted version
+    let processedLine = line;
+    let parts = [];
+    
+    // Split the line into segments to process separately
+    const insertionMatch = line.match(/(\d+)\s+insertions?\(\+\)/);
+    const deletionMatch = line.match(/(\d+)\s+deletions?\(-\)/);
+    
+    let lastIndex = 0;
+    
+    // Process the line in order
+    if (insertionMatch && deletionMatch) {
+      const insertionIndex = line.indexOf(insertionMatch[0]);
+      const deletionIndex = line.indexOf(deletionMatch[0]);
+      
+      if (insertionIndex < deletionIndex) {
+        // Insertion comes first
+        parts.push(
+          <span key={`${index}-1`}>{line.substring(0, insertionIndex)}</span>,
+          <span key={`${index}-2`} className="text-[#F2FCE2]">{insertionMatch[0]}</span>,
+          <span key={`${index}-3`}>{line.substring(insertionIndex + insertionMatch[0].length, deletionIndex)}</span>,
+          <span key={`${index}-4`} className="text-[#ea384c]">{deletionMatch[0]}</span>,
+          <span key={`${index}-5`}>{line.substring(deletionIndex + deletionMatch[0].length)}</span>
+        );
+      } else {
+        // Deletion comes first
+        parts.push(
+          <span key={`${index}-1`}>{line.substring(0, deletionIndex)}</span>,
+          <span key={`${index}-2`} className="text-[#ea384c]">{deletionMatch[0]}</span>,
+          <span key={`${index}-3`}>{line.substring(deletionIndex + deletionMatch[0].length, insertionIndex)}</span>,
+          <span key={`${index}-4`} className="text-[#F2FCE2]">{insertionMatch[0]}</span>,
+          <span key={`${index}-5`}>{line.substring(insertionIndex + insertionMatch[0].length)}</span>
+        );
+      }
+    } else if (insertionMatch) {
+      const insertionIndex = line.indexOf(insertionMatch[0]);
+      parts.push(
+        <span key={`${index}-1`}>{line.substring(0, insertionIndex)}</span>,
+        <span key={`${index}-2`} className="text-[#F2FCE2]">{insertionMatch[0]}</span>,
+        <span key={`${index}-3`}>{line.substring(insertionIndex + insertionMatch[0].length)}</span>
+      );
+    } else if (deletionMatch) {
+      const deletionIndex = line.indexOf(deletionMatch[0]);
+      parts.push(
+        <span key={`${index}-1`}>{line.substring(0, deletionIndex)}</span>,
+        <span key={`${index}-2`} className="text-[#ea384c]">{deletionMatch[0]}</span>,
+        <span key={`${index}-3`}>{line.substring(deletionIndex + deletionMatch[0].length)}</span>
+      );
+    } else {
+      parts.push(<span key={index}>{line}</span>);
+    }
+    
+    return <span className="block">{parts}</span>;
+  };
+
+  // Helper function to highlight +/- symbols
+  const highlightPlusMinusSymbols = (text: string) => {
+    let result = [];
+    let currentType = null; // 'plus', 'minus', or null
+    let currentText = '';
+    
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      
+      if (char === '+') {
+        if (currentType !== 'plus') {
+          if (currentText) {
+            result.push(
+              <span key={`sym-${i}`} className={currentType === 'minus' ? "text-[#ea384c]" : ""}>
+                {currentText}
+              </span>
+            );
+          }
+          currentType = 'plus';
+          currentText = char;
+        } else {
+          currentText += char;
+        }
+      } else if (char === '-') {
+        if (currentType !== 'minus') {
+          if (currentText) {
+            result.push(
+              <span key={`sym-${i}`} className={currentType === 'plus' ? "text-[#F2FCE2]" : ""}>
+                {currentText}
+              </span>
+            );
+          }
+          currentType = 'minus';
+          currentText = char;
+        } else {
+          currentText += char;
+        }
+      } else {
+        if (currentText) {
+          result.push(
+            <span 
+              key={`sym-${i}`} 
+              className={currentType === 'plus' ? "text-[#F2FCE2]" : currentType === 'minus' ? "text-[#ea384c]" : ""}
+            >
+              {currentText}
+            </span>
+          );
+        }
+        currentType = null;
+        currentText = char;
+      }
+    }
+    
+    // Don't forget the last segment
+    if (currentText) {
+      result.push(
+        <span 
+          key="sym-last" 
+          className={currentType === 'plus' ? "text-[#F2FCE2]" : currentType === 'minus' ? "text-[#ea384c]" : ""}
+        >
+          {currentText}
+        </span>
+      );
+    }
+    
+    return result;
   };
 
   return (
