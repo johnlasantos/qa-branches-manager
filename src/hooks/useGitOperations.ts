@@ -10,8 +10,7 @@ import {
   deleteBranch, 
   updateCurrentBranch,
   cleanupBranches,
-  searchBranches,
-  GitOperationResponse
+  searchBranches
 } from '@/services/gitService';
 
 export const useGitOperations = () => {
@@ -27,17 +26,6 @@ export const useGitOperations = () => {
   const [localBranchesTotal, setLocalBranchesTotal] = useState<number>(0);
   const [remoteBranchesTotal, setRemoteBranchesTotal] = useState<number>(0);
   const [reloadTrigger, setReloadTrigger] = useState<number>(0);
-
-  // Helper to extract actual output from Git response
-  const getGitCommandOutput = (response: GitOperationResponse): string => {
-    // Prioritize stdout if it exists, then stderr
-    if (response.stdout && response.stdout.trim()) {
-      return response.stdout;
-    } else if (response.stderr && response.stderr.trim()) {
-      return response.stderr;
-    }
-    return '';
-  };
 
   // Load initial set or reset branches
   const fetchLocalBranches = useCallback(async (reset = true) => {
@@ -125,27 +113,20 @@ export const useGitOperations = () => {
       setLocalBranches(updatedBranches);
       
       // Perform the operation
-      const output: GitOperationResponse = await switchBranch(branchName, config.apiBaseUrl);
-      
-      // Display exactly what Git returned
-      setGitOutput(getGitCommandOutput(output));
+      const output = await switchBranch(branchName, config.apiBaseUrl);
+      setGitOutput(output);
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
       
-      if (output.success) {
-        if (opts && opts.imported) {
-          toast.success(`Local branch created: ${branchName}`, {
-            description: 'Branch imported from remote successfully.',
-          });
-        } else {
-          toast.success(`Switched to branch: ${branchName}`, {
-            description: 'Branch change was successful.',
-          });
-        }
+      if (opts && opts.imported) {
+        toast.success(`Local branch created: ${branchName}`, {
+          description: 'Branch imported from remote successfully.',
+        });
       } else {
-        // Show an error toast with a more generic message
-        toast.error(`Failed to switch to ${branchName}`);
+        toast.success(`Switched to branch: ${branchName}`, {
+          description: 'Branch change was successful.',
+        });
       }
       
       // Refresh local branches in the background without blocking UI
@@ -155,8 +136,6 @@ export const useGitOperations = () => {
     } catch (error) {
       // Important: Set loading to false immediately in case of error
       setIsLoading(false);
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      setGitOutput(errorMessage);
       toast.error(`Failed to switch to ${branchName}`);
       fetchLocalBranches(true);
     }
@@ -172,20 +151,12 @@ export const useGitOperations = () => {
         prevBranches.filter(branch => branch.name !== branchName)
       );
       
-      const output: GitOperationResponse = await deleteBranch(branchName, config.apiBaseUrl);
-      
-      // Display exactly what Git returned
-      setGitOutput(getGitCommandOutput(output));
+      const output = await deleteBranch(branchName, config.apiBaseUrl);
+      setGitOutput(output);
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
-      
-      if (output.success) {
-        toast.success(`Deleted ${branchName}`);
-      } else {
-        // Show the error output
-        toast.error(`Failed to delete ${branchName}`);
-      }
+      toast.success(`Deleted ${branchName}`);
       
       // Refresh local branches in the background without blocking UI
       setTimeout(() => {
@@ -194,8 +165,6 @@ export const useGitOperations = () => {
     } catch (error) {
       // Important: Set loading to false immediately in case of error
       setIsLoading(false);
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      setGitOutput(errorMessage);
       toast.error(`Failed to delete ${branchName}`);
       fetchLocalBranches(true);
     }
@@ -205,22 +174,14 @@ export const useGitOperations = () => {
     setIsLoading(true);
     setGitOutput('');
     try {
-      const output: GitOperationResponse = await updateCurrentBranch(config.apiBaseUrl);
-      
-      // Display exactly what Git returned
-      setGitOutput(getGitCommandOutput(output));
+      const output = await updateCurrentBranch(config.apiBaseUrl);
+      setGitOutput(output);
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
-      
-      if (output.success) {
-        toast.success('Branch updated successfully', {
-          description: 'The current branch has been updated.',
-        });
-      } else {
-        // Show the error output
-        toast.error('Failed to update branch');
-      }
+      toast.success('Branch updated successfully', {
+        description: 'The current branch has been updated.',
+      });
       
       // Refresh local branches in the background without blocking UI
       setTimeout(() => {
@@ -229,8 +190,6 @@ export const useGitOperations = () => {
     } catch (error) {
       // Important: Set loading to false immediately in case of error
       setIsLoading(false);
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      setGitOutput(errorMessage);
       toast.error('Failed to update branch');
     }
   };
@@ -239,20 +198,12 @@ export const useGitOperations = () => {
     setIsLoading(true);
     setGitOutput('');
     try {
-      const output: GitOperationResponse = await cleanupBranches(config.apiBaseUrl);
-      
-      // Display exactly what Git returned
-      setGitOutput(getGitCommandOutput(output));
+      const output = await cleanupBranches(config.apiBaseUrl);
+      setGitOutput(output);
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
-      
-      if (output.success) {
-        toast.success('Deprecated branches removed');
-      } else {
-        // Show the error output
-        toast.error('Failed to clean up branches');
-      }
+      toast.success('Deprecated branches removed');
       
       // Refresh local branches in the background without blocking UI
       setTimeout(() => {
@@ -261,8 +212,6 @@ export const useGitOperations = () => {
     } catch (error) {
       // Important: Set loading to false immediately in case of error
       setIsLoading(false);
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      setGitOutput(errorMessage);
       toast.error('Failed to clean up branches');
     }
   };

@@ -2,15 +2,6 @@
 import { Branch } from "@/components/BranchList";
 import { RemoteBranch } from "@/components/BranchSearch";
 
-// Define the Git operation response type
-export interface GitOperationResponse {
-  success: boolean;
-  stdout: string;
-  stderr: string;
-  message?: string;
-  code?: number;
-}
-
 // Helper function for API requests
 const apiRequest = async (endpoint: string, apiBaseUrl: string = '', options?: RequestInit) => {
   try {
@@ -77,30 +68,30 @@ export const getRemoteBranches = async (
   return await apiRequest(`remote-branches?page=${page}&limit=${limit}`, apiBaseUrl);
 };
 
-export const switchBranch = async (branchName: string, apiBaseUrl: string = ''): Promise<GitOperationResponse> => {
+export const switchBranch = async (branchName: string, apiBaseUrl: string = ''): Promise<string> => {
   const data = await apiRequest('checkout', apiBaseUrl, {
     method: 'POST',
     body: JSON.stringify({ branch: branchName }),
   });
-  return data;
+  return data.message;
 };
 
-export const deleteBranch = async (branchName: string, apiBaseUrl: string = ''): Promise<GitOperationResponse> => {
+export const deleteBranch = async (branchName: string, apiBaseUrl: string = ''): Promise<string> => {
   const data = await apiRequest('delete-branch', apiBaseUrl, {
     method: 'POST',
     body: JSON.stringify({ branch: branchName }),
   });
-  return data;
+  return data.message;
 };
 
-export const updateCurrentBranch = async (apiBaseUrl: string = ''): Promise<GitOperationResponse> => {
+export const updateCurrentBranch = async (apiBaseUrl: string = ''): Promise<string> => {
   const data = await apiRequest('pull', apiBaseUrl, {
     method: 'POST'
   });
-  return data;
+  return data.message;
 };
 
-export const cleanupBranches = async (apiBaseUrl: string = ''): Promise<GitOperationResponse> => {
+export const cleanupBranches = async (apiBaseUrl: string = ''): Promise<string> => {
   const data = await apiRequest('cleanup', apiBaseUrl, {
     method: 'POST'
   });
@@ -110,7 +101,7 @@ export const cleanupBranches = async (apiBaseUrl: string = ''): Promise<GitOpera
     console.warn('Cleanup warnings:', data.warnings);
   }
   
-  return data;
+  return data.message;
 };
 
 export const searchBranches = async (

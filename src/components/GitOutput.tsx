@@ -24,7 +24,7 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
 
   // Process the output to apply color highlighting
   const processOutput = (text: string) => {
-    if (!text || text.trim() === '') return <span className="text-gray-500 italic">No output from Git command</span>;
+    if (!text) return <span className="text-gray-500 italic">No output to display</span>;
 
     return text.split('\n').map((line, index) => {
       // For lines indicating file changes with +/- summary at end
@@ -39,7 +39,7 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
       else if (line.includes('new file mode')) {
         return (
           <span key={index} className="block">
-            <span className="text-[#F2FCE2]">{line}</span>
+            <span className="text-[#7ce77c]">{line}</span>
           </span>
         );
       }
@@ -66,7 +66,7 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
       // Standard +/- lines (beginning with + or -)
       else if (line.startsWith('+') || line.includes('+++++')) {
         return (
-          <span key={index} className="text-[#F2FCE2] block">
+          <span key={index} className="text-[#7ce77c] block">
             {line}
           </span>
         );
@@ -78,10 +78,34 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
           </span>
         );
       }
+      // Highlight "Deleted branch" message
+      else if (line.includes('Deleted branch')) {
+        return (
+          <span key={index} className="text-[#ea384c] block font-medium">
+            {line}
+          </span>
+        );
+      }
+      // Highlight "deprecated branches removed" message
+      else if (line.includes('deprecated branches removed')) {
+        return (
+          <span key={index} className="text-[#ea384c] block font-medium">
+            {line}
+          </span>
+        );
+      }
       // Highlight "Already up to date" message
       else if (line.includes('Already up to date')) {
         return (
-          <span key={index} className="text-[#FEF7CD] block font-medium">
+          <span key={index} className="text-[#7ce77c] block font-medium">
+            {line}
+          </span>
+        );
+      }
+      // Highlight "Switched to branch" message
+      else if (line.includes('Switched to branch')) {
+        return (
+          <span key={index} className="text-[#7ce77c] block font-medium">
             {line}
           </span>
         );
@@ -140,7 +164,7 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
       const insertionIndex = line.indexOf(insertionMatch[0], currentPos);
       parts.push(
         <span key={`${index}-insert-before`}>{line.substring(currentPos, insertionIndex)}</span>,
-        <span key={`${index}-insert`} className="text-[#F2FCE2]">{insertionMatch[0]}</span>
+        <span key={`${index}-insert`} className="text-[#7ce77c]">{insertionMatch[0]}</span>
       );
       currentPos = insertionIndex + insertionMatch[0].length;
     }
@@ -196,7 +220,7 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
         if (currentType !== 'minus') {
           if (currentText) {
             result.push(
-              <span key={`sym-${i}`} className={currentType === 'plus' ? "text-[#F2FCE2]" : ""}>
+              <span key={`sym-${i}`} className={currentType === 'plus' ? "text-[#7ce77c]" : ""}>
                 {currentText}
               </span>
             );
@@ -211,7 +235,7 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
           result.push(
             <span 
               key={`sym-${i}`} 
-              className={currentType === 'plus' ? "text-[#F2FCE2]" : currentType === 'minus' ? "text-[#ea384c]" : ""}
+              className={currentType === 'plus' ? "text-[#7ce77c]" : currentType === 'minus' ? "text-[#ea384c]" : ""}
             >
               {currentText}
             </span>
@@ -227,7 +251,7 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
       result.push(
         <span 
           key="sym-last" 
-          className={currentType === 'plus' ? "text-[#F2FCE2]" : currentType === 'minus' ? "text-[#ea384c]" : ""}
+          className={currentType === 'plus' ? "text-[#7ce77c]" : currentType === 'minus' ? "text-[#ea384c]" : ""}
         >
           {currentText}
         </span>
@@ -238,7 +262,7 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
   };
 
   return (
-    <div className={cn("w-full h-full flex flex-col", className)}>
+    <div className={cn("w-full flex flex-col", className)}>
       <div className="flex justify-between items-center mb-2">
         <h2 className="text-lg font-semibold">Command Output</h2>
         <Button 
@@ -252,7 +276,7 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
           <Copy className="h-4 w-4" />
         </Button>
       </div>
-      <ScrollArea className="flex-1 rounded-md border">
+      <ScrollArea className="flex-1 rounded-md">
         <pre className="git-output text-sm p-4 whitespace-pre-wrap h-full">
           {processOutput(output)}
         </pre>
