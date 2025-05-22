@@ -5,9 +5,10 @@ import { RemoteBranch } from "@/components/BranchSearch";
 // Define the Git operation response type
 export interface GitOperationResponse {
   success: boolean;
-  stdout?: string;
-  stderr?: string;
+  stdout: string;
+  stderr: string;
   message?: string;
+  code?: number;
 }
 
 // Helper function for API requests

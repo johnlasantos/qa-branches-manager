@@ -24,7 +24,7 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
 
   // Process the output to apply color highlighting
   const processOutput = (text: string) => {
-    if (!text) return <span className="text-gray-500 italic">No recent command output</span>;
+    if (!text || text.trim() === '') return <span className="text-gray-500 italic">No output from Git command</span>;
 
     return text.split('\n').map((line, index) => {
       // For lines indicating file changes with +/- summary at end

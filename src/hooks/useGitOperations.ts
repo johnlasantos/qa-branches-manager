@@ -28,6 +28,17 @@ export const useGitOperations = () => {
   const [remoteBranchesTotal, setRemoteBranchesTotal] = useState<number>(0);
   const [reloadTrigger, setReloadTrigger] = useState<number>(0);
 
+  // Helper to extract actual output from Git response
+  const getGitCommandOutput = (response: GitOperationResponse): string => {
+    // Prioritize stdout if it exists, then stderr
+    if (response.stdout && response.stdout.trim()) {
+      return response.stdout;
+    } else if (response.stderr && response.stderr.trim()) {
+      return response.stderr;
+    }
+    return '';
+  };
+
   // Load initial set or reset branches
   const fetchLocalBranches = useCallback(async (reset = true) => {
     try {
@@ -116,8 +127,8 @@ export const useGitOperations = () => {
       // Perform the operation
       const output: GitOperationResponse = await switchBranch(branchName, config.apiBaseUrl);
       
-      // Display exactly what Git returned - no artificial messages
-      setGitOutput(output.stdout || output.stderr || '');
+      // Display exactly what Git returned
+      setGitOutput(getGitCommandOutput(output));
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
@@ -163,8 +174,8 @@ export const useGitOperations = () => {
       
       const output: GitOperationResponse = await deleteBranch(branchName, config.apiBaseUrl);
       
-      // Display exactly what Git returned - no artificial messages
-      setGitOutput(output.stdout || output.stderr || '');
+      // Display exactly what Git returned
+      setGitOutput(getGitCommandOutput(output));
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
@@ -196,8 +207,8 @@ export const useGitOperations = () => {
     try {
       const output: GitOperationResponse = await updateCurrentBranch(config.apiBaseUrl);
       
-      // Display exactly what Git returned - no artificial messages
-      setGitOutput(output.stdout || output.stderr || '');
+      // Display exactly what Git returned
+      setGitOutput(getGitCommandOutput(output));
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
@@ -230,8 +241,8 @@ export const useGitOperations = () => {
     try {
       const output: GitOperationResponse = await cleanupBranches(config.apiBaseUrl);
       
-      // Display exactly what Git returned - no artificial messages
-      setGitOutput(output.stdout || output.stderr || '');
+      // Display exactly what Git returned
+      setGitOutput(getGitCommandOutput(output));
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsLoading(false);
