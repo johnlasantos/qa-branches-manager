@@ -32,8 +32,36 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
         return processFileChangeLine(line, index);
       }
       // For summary lines like "X insertions(+), Y deletions(-)"
-      else if (line.includes('insertions(+)') || line.includes('deletions(-)')) {
+      else if (line.includes('insertions(+)') || line.includes('deletions(-)') || line.includes('files changed')) {
         return processSummaryLine(line, index);
+      }
+      // For file mode changes
+      else if (line.includes('new file mode')) {
+        return (
+          <span key={index} className="block">
+            <span className="text-[#F2FCE2]">{line}</span>
+          </span>
+        );
+      }
+      else if (line.includes('delete mode')) {
+        return (
+          <span key={index} className="block">
+            <span className="text-[#ea384c]">{line}</span>
+          </span>
+        );
+      }
+      // For binary file changes
+      else if (line.includes('binary file') && line.includes('changed')) {
+        return (
+          <span key={index} className="block">
+            {line.split('changed').map((part, i) => (
+              <React.Fragment key={`bin-${i}`}>
+                {part}
+                {i === 0 && <span className="text-[#FEF7CD]">changed</span>}
+              </React.Fragment>
+            ))}
+          </span>
+        );
       }
       // Standard +/- lines (beginning with + or -)
       else if (line.startsWith('+') || line.includes('+++++')) {
@@ -84,56 +112,50 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
 
   // Handle summary lines like "8 files changed, 12870 insertions(+), 12711 deletions(-)"
   const processSummaryLine = (line: string, index: number) => {
-    // Replace insertions(+) with highlighted version
-    let processedLine = line;
     let parts = [];
+    let currentPos = 0;
     
-    // Split the line into segments to process separately
+    // Check for "files changed"
+    const changedMatch = line.match(/(\d+)\s+files?\s+changed/);
+    if (changedMatch) {
+      const changedIndex = line.indexOf(changedMatch[0]);
+      parts.push(
+        <span key={`${index}-changed-before`}>{line.substring(currentPos, changedIndex)}</span>,
+        <span key={`${index}-changed`} className="text-[#FEF7CD]">{changedMatch[0]}</span>
+      );
+      currentPos = changedIndex + changedMatch[0].length;
+    }
+    
+    // Check for insertions
     const insertionMatch = line.match(/(\d+)\s+insertions?\(\+\)/);
+    if (insertionMatch) {
+      const insertionIndex = line.indexOf(insertionMatch[0], currentPos);
+      parts.push(
+        <span key={`${index}-insert-before`}>{line.substring(currentPos, insertionIndex)}</span>,
+        <span key={`${index}-insert`} className="text-[#F2FCE2]">{insertionMatch[0]}</span>
+      );
+      currentPos = insertionIndex + insertionMatch[0].length;
+    }
+    
+    // Check for deletions
     const deletionMatch = line.match(/(\d+)\s+deletions?\(-\)/);
-    
-    let lastIndex = 0;
-    
-    // Process the line in order
-    if (insertionMatch && deletionMatch) {
-      const insertionIndex = line.indexOf(insertionMatch[0]);
-      const deletionIndex = line.indexOf(deletionMatch[0]);
-      
-      if (insertionIndex < deletionIndex) {
-        // Insertion comes first
-        parts.push(
-          <span key={`${index}-1`}>{line.substring(0, insertionIndex)}</span>,
-          <span key={`${index}-2`} className="text-[#F2FCE2]">{insertionMatch[0]}</span>,
-          <span key={`${index}-3`}>{line.substring(insertionIndex + insertionMatch[0].length, deletionIndex)}</span>,
-          <span key={`${index}-4`} className="text-[#ea384c]">{deletionMatch[0]}</span>,
-          <span key={`${index}-5`}>{line.substring(deletionIndex + deletionMatch[0].length)}</span>
-        );
-      } else {
-        // Deletion comes first
-        parts.push(
-          <span key={`${index}-1`}>{line.substring(0, deletionIndex)}</span>,
-          <span key={`${index}-2`} className="text-[#ea384c]">{deletionMatch[0]}</span>,
-          <span key={`${index}-3`}>{line.substring(deletionIndex + deletionMatch[0].length, insertionIndex)}</span>,
-          <span key={`${index}-4`} className="text-[#F2FCE2]">{insertionMatch[0]}</span>,
-          <span key={`${index}-5`}>{line.substring(insertionIndex + insertionMatch[0].length)}</span>
-        );
-      }
-    } else if (insertionMatch) {
-      const insertionIndex = line.indexOf(insertionMatch[0]);
+    if (deletionMatch) {
+      const deletionIndex = line.indexOf(deletionMatch[0], currentPos);
       parts.push(
-        <span key={`${index}-1`}>{line.substring(0, insertionIndex)}</span>,
-        <span key={`${index}-2`} className="text-[#F2FCE2]">{insertionMatch[0]}</span>,
-        <span key={`${index}-3`}>{line.substring(insertionIndex + insertionMatch[0].length)}</span>
+        <span key={`${index}-delete-before`}>{line.substring(currentPos, deletionIndex)}</span>,
+        <span key={`${index}-delete`} className="text-[#ea384c]">{deletionMatch[0]}</span>
       );
-    } else if (deletionMatch) {
-      const deletionIndex = line.indexOf(deletionMatch[0]);
-      parts.push(
-        <span key={`${index}-1`}>{line.substring(0, deletionIndex)}</span>,
-        <span key={`${index}-2`} className="text-[#ea384c]">{deletionMatch[0]}</span>,
-        <span key={`${index}-3`}>{line.substring(deletionIndex + deletionMatch[0].length)}</span>
-      );
-    } else {
-      parts.push(<span key={index}>{line}</span>);
+      currentPos = deletionIndex + deletionMatch[0].length;
+    }
+    
+    // Add any remaining text
+    if (currentPos < line.length) {
+      parts.push(<span key={`${index}-remaining`}>{line.substring(currentPos)}</span>);
+    }
+    
+    // If no matches were found, return the original line
+    if (parts.length === 0) {
+      return <span key={index} className="block">{line}</span>;
     }
     
     return <span className="block">{parts}</span>;
@@ -213,13 +235,13 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
         <h2 className="text-lg font-semibold">Command Output</h2>
         <Button 
           variant="outline" 
-          size="sm" 
-          className="gap-1" 
+          size="icon" 
+          className="h-8 w-8" 
           onClick={handleCopy} 
           disabled={!output}
+          title="Copy to clipboard"
         >
-          <Copy className="h-3.5 w-3.5" />
-          Copy
+          <Copy className="h-4 w-4" />
         </Button>
       </div>
       <ScrollArea className="h-[250px] rounded-md border">
