@@ -1,3 +1,4 @@
+
 // This service connects to the Git backend API
 import { Branch } from "@/components/BranchList";
 import { RemoteBranch } from "@/components/BranchSearch";
@@ -73,7 +74,7 @@ export const switchBranch = async (branchName: string, apiBaseUrl: string = ''):
     method: 'POST',
     body: JSON.stringify({ branch: branchName }),
   });
-  return data.message;
+  return data.error ? data.error : data.message;
 };
 
 export const deleteBranch = async (branchName: string, apiBaseUrl: string = ''): Promise<string> => {
@@ -81,14 +82,14 @@ export const deleteBranch = async (branchName: string, apiBaseUrl: string = ''):
     method: 'POST',
     body: JSON.stringify({ branch: branchName }),
   });
-  return data.message;
+  return data.error ? data.error : data.message;
 };
 
 export const updateCurrentBranch = async (apiBaseUrl: string = ''): Promise<string> => {
   const data = await apiRequest('pull', apiBaseUrl, {
     method: 'POST'
   });
-  return data.message;
+  return data.error ? data.error : data.message;
 };
 
 export const cleanupBranches = async (apiBaseUrl: string = ''): Promise<string> => {
@@ -101,7 +102,7 @@ export const cleanupBranches = async (apiBaseUrl: string = ''): Promise<string> 
     console.warn('Cleanup warnings:', data.warnings);
   }
   
-  return data.message;
+  return data.error ? data.error : data.message;
 };
 
 export const searchBranches = async (

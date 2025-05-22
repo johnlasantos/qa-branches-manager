@@ -61,7 +61,11 @@ async function runGitCommand(command) {
     return { success: true, output: stdout, error: stderr };
   } catch (error) {
     console.error(`Git command failed: ${command}`, error);
-    return { success: false, output: '', error: error.message };
+    return { 
+      success: false, 
+      output: '', 
+      error: error.stderr || error.message 
+    };
   }
 }
 
@@ -306,12 +310,17 @@ app.post('/checkout', async (req, res) => {
       console.error('Checkout failed:', result.error);
       return res.status(500).json({ 
         success: false, 
-        message: `Failed to switch to branch '${branch}': ${result.error}` 
+        message: `Failed to switch to branch '${branch}'`,
+        error: result.error 
       });
     }
   } catch (error) {
     console.error('Error during checkout:', error);
-    res.status(500).json({ success: false, message: `Failed to switch to branch: ${error.message}` });
+    res.status(500).json({ 
+      success: false, 
+      message: `Failed to switch to branch`,
+      error: error.message 
+    });
   }
 });
 
@@ -357,12 +366,20 @@ app.post('/delete-branch', async (req, res) => {
         });
       } else {
         console.error('Force delete failed:', forceResult.error);
-        res.status(500).json({ success: false, message: forceResult.error });
+        res.status(500).json({ 
+          success: false, 
+          message: 'Failed to delete branch',
+          error: forceResult.error 
+        });
       }
     }
   } catch (error) {
     console.error('Error during delete branch:', error);
-    res.status(500).json({ success: false, message: `Failed to delete branch: ${error.message}` });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to delete branch',
+      error: error.message 
+    });
   }
 });
 
@@ -372,14 +389,25 @@ app.post('/pull', async (req, res) => {
     const result = await runGitCommand('git pull');
     
     if (result.success) {
-      res.json({ success: true, message: result.output || 'Already up to date.' });
+      res.json({ 
+        success: true, 
+        message: result.output || 'Already up to date.' 
+      });
     } else {
       console.error('Pull failed:', result.error);
-      res.status(500).json({ success: false, message: result.error });
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to pull',
+        error: result.error 
+      });
     }
   } catch (error) {
     console.error('Error during pull:', error);
-    res.status(500).json({ success: false, message: `Failed to pull: ${error.message}` });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to pull',
+      error: error.message 
+    });
   }
 });
 
@@ -392,7 +420,8 @@ app.post('/cleanup', async (req, res) => {
       console.error('Fetch failed during cleanup:', fetchResult.error);
       return res.status(500).json({ 
         success: false, 
-        message: `Fetch failed: ${fetchResult.error}` 
+        message: 'Fetch failed',
+        error: fetchResult.error 
       });
     }
     
@@ -474,7 +503,8 @@ app.post('/cleanup', async (req, res) => {
     console.error('Error during cleanup:', error);
     res.status(500).json({ 
       success: false, 
-      message: `Failed to clean up branches: ${error.message}` 
+      message: 'Failed to clean up branches',
+      error: error.message 
     });
   }
 });
@@ -488,11 +518,19 @@ app.get('/status', async (req, res) => {
       res.json({ success: true, status: result.output });
     } else {
       console.error('Status command failed:', result.error);
-      res.status(500).json({ success: false, message: result.error });
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to get status',
+        error: result.error 
+      });
     }
   } catch (error) {
     console.error('Error getting status:', error);
-    res.status(500).json({ success: false, message: `Failed to get status: ${error.message}` });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to get status',
+      error: error.message 
+    });
   }
 });
 

@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Branch } from '@/components/BranchList';
@@ -136,6 +137,8 @@ export const useGitOperations = () => {
     } catch (error) {
       // Important: Set loading to false immediately in case of error
       setIsLoading(false);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      setGitOutput(errorMessage);
       toast.error(`Failed to switch to ${branchName}`);
       fetchLocalBranches(true);
     }
@@ -165,6 +168,8 @@ export const useGitOperations = () => {
     } catch (error) {
       // Important: Set loading to false immediately in case of error
       setIsLoading(false);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      setGitOutput(errorMessage);
       toast.error(`Failed to delete ${branchName}`);
       fetchLocalBranches(true);
     }
@@ -190,6 +195,8 @@ export const useGitOperations = () => {
     } catch (error) {
       // Important: Set loading to false immediately in case of error
       setIsLoading(false);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      setGitOutput(errorMessage);
       toast.error('Failed to update branch');
     }
   };
@@ -212,6 +219,8 @@ export const useGitOperations = () => {
     } catch (error) {
       // Important: Set loading to false immediately in case of error
       setIsLoading(false);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      setGitOutput(errorMessage);
       toast.error('Failed to clean up branches');
     }
   };
