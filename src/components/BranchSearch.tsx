@@ -1,16 +1,10 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, GitBranch, ChevronDown, Loader } from 'lucide-react';
+import { Search, ChevronDown, Loader } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import BranchIcon from './BranchIcon';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -117,13 +111,14 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
     setShowSuggestions(true);
   };
 
-  const handleSelectBranch = (branchName: string) => {
+  const handleBranchClick = (branchName: string) => {
     setSelectedBranch(branchName);
-    setShowSuggestions(true);
     setSearchQuery(branchName);
     if (inputRef.current) {
       inputRef.current.value = branchName;
     }
+    // Opening the import dialog immediately when branch is clicked
+    setShowImportDialog(true);
   };
 
   useEffect(() => {
@@ -136,91 +131,65 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const importEnabled = selectedBranch !== null &&
-    filteredBranches.some(branch => branch.name === selectedBranch);
-
   return (
     <div className={cn("relative", className)} ref={searchRef}>
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Input
-            ref={inputRef}
-            type="text"
-            placeholder="Select remote branch"
-            value={searchQuery}
-            onChange={handleSearchChange}
-            onFocus={handleInputFocus}
-            className="pr-9 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-input"
-            autoComplete="off"
-          />
-          <ChevronDown 
-            className="absolute right-2.5 top-2.5 h-4 w-4 text-gray-500 cursor-pointer" 
-            onClick={handleCaretClick}
-          />
-        </div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span>
-                <AlertDialog 
-                  open={showImportDialog} 
-                  onOpenChange={(isOpen) => {
-                    setShowImportDialog(isOpen);
-                  }}
-                >
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      onClick={() => setShowImportDialog(true)}
-                      size="sm"
-                      disabled={!importEnabled}
-                      className="whitespace-nowrap bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 disabled:opacity-50"
-                    >
-                      <GitBranch className="mr-2 h-4 w-4" />
-                      Import local branch
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Create and change a local branch from <span className="font-mono">{selectedBranch}</span>?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will create a new local branch from the selected remote branch.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => {
-                          setShowImportDialog(false);
-                          if (selectedBranch) {
-                            onSelectRemoteBranch(selectedBranch, { imported: true });
-                            setSearchQuery('');
-                            setSelectedBranch(null);
-                            setShowSuggestions(false);
-                            if (inputRef.current) {
-                              inputRef.current.value = '';
-                            }
-                          }
-                        }}
-                      >
-                        Import branch
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Create and change a local branch from the selected remote branch</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+      <div className="relative">
+        <Input
+          ref={inputRef}
+          type="text"
+          placeholder="Search remote branches"
+          value={searchQuery}
+          onChange={handleSearchChange}
+          onFocus={handleInputFocus}
+          className="pr-9 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-input"
+          autoComplete="off"
+        />
+        <ChevronDown 
+          className="absolute right-2.5 top-2.5 h-4 w-4 text-gray-500 cursor-pointer" 
+          onClick={handleCaretClick}
+        />
       </div>
+      
+      <AlertDialog 
+        open={showImportDialog} 
+        onOpenChange={(isOpen) => {
+          setShowImportDialog(isOpen);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Create and change a local branch from <span className="font-mono">{selectedBranch}</span>?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will create a new local branch from the selected remote branch.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowImportDialog(false);
+                if (selectedBranch) {
+                  onSelectRemoteBranch(selectedBranch, { imported: true });
+                  setSearchQuery('');
+                  setSelectedBranch(null);
+                  setShowSuggestions(false);
+                  if (inputRef.current) {
+                    inputRef.current.value = '';
+                  }
+                }
+              }}
+            >
+              Import branch
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
       {showSuggestions && filteredBranches.length > 0 && (
         <div 
-          className="search-results mt-1 absolute left-0 bg-white border border-gray-200 rounded shadow-lg z-50" 
-          style={{ width: inputRef.current?.offsetWidth }}
+          className="search-results mt-1 absolute left-0 bg-white border border-gray-200 rounded shadow-lg z-50 w-full" 
         >
           <div className="py-1 text-xs text-gray-500 px-3 border-b flex items-center">
             <span>Remote branches</span>
@@ -243,7 +212,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
                       : ""
                   )}
                   onMouseDown={e => e.preventDefault()}
-                  onClick={() => handleSelectBranch(branch.name)}
+                  onClick={() => handleBranchClick(branch.name)}
                   tabIndex={0}
                   aria-selected={selectedBranch === branch.name}
                 >
@@ -251,11 +220,9 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
                     <BranchIcon branchName={branch.name} hasRemote={true} className="mr-2" />
                     <span>{branch.name}</span>
                   </div>
-                  {selectedBranch === branch.name && (
-                    <span className="ml-2 text-xs text-blue-700 font-semibold">
-                      Selected
-                    </span>
-                  )}
+                  <span className="text-xs text-blue-700 opacity-0 group-hover:opacity-100">
+                    Import
+                  </span>
                 </li>
               ))}
               <li ref={loadingRef} className="h-4">
