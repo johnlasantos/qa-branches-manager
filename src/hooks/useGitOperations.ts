@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Branch } from '@/components/BranchList';
@@ -10,7 +11,8 @@ import {
   deleteBranch, 
   updateCurrentBranch,
   cleanupBranches,
-  searchBranches
+  searchBranches,
+  GitOperationResponse
 } from '@/services/gitService';
 
 export const useGitOperations = () => {
@@ -113,7 +115,7 @@ export const useGitOperations = () => {
       setLocalBranches(updatedBranches);
       
       // Perform the operation
-      const output = await switchBranch(branchName, config.apiBaseUrl);
+      const output: GitOperationResponse = await switchBranch(branchName, config.apiBaseUrl);
       setGitOutput(output.stdout || output.stderr || '');
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
@@ -131,7 +133,6 @@ export const useGitOperations = () => {
         }
       } else {
         // Show an error toast with stderr if available
-        const errorMessage = output.stderr || `Failed to switch to ${branchName}`;
         toast.error(`Failed to switch to ${branchName}`);
       }
       
@@ -159,7 +160,7 @@ export const useGitOperations = () => {
         prevBranches.filter(branch => branch.name !== branchName)
       );
       
-      const output = await deleteBranch(branchName, config.apiBaseUrl);
+      const output: GitOperationResponse = await deleteBranch(branchName, config.apiBaseUrl);
       setGitOutput(output.stdout || output.stderr || '');
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
@@ -190,7 +191,7 @@ export const useGitOperations = () => {
     setIsLoading(true);
     setGitOutput('');
     try {
-      const output = await updateCurrentBranch(config.apiBaseUrl);
+      const output: GitOperationResponse = await updateCurrentBranch(config.apiBaseUrl);
       setGitOutput(output.stdout || output.stderr || '');
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
@@ -222,7 +223,7 @@ export const useGitOperations = () => {
     setIsLoading(true);
     setGitOutput('');
     try {
-      const output = await cleanupBranches(config.apiBaseUrl);
+      const output: GitOperationResponse = await cleanupBranches(config.apiBaseUrl);
       setGitOutput(output.stdout || output.stderr || '');
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
