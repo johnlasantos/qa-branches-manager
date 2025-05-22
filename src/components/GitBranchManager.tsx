@@ -57,24 +57,21 @@ const GitBranchManager: React.FC = () => {
       <div className="container mx-auto px-4 py-6 max-w-7xl h-screen flex flex-col overflow-hidden">
         <GitHeader />
         
-        <div className="flex flex-col w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 w-full">
-            <div className="lg:col-span-3">
-              <BranchSearch 
-                remoteBranches={remoteBranches}
-                localBranches={localBranches}
-                onSearch={handleSearch}
-                onSelectRemoteBranch={handleSwitchBranch}
-                onScrollEnd={fetchMoreRemoteBranches}
-              />
-            </div>
-          </div>
-        </div>
-        
-        <Separator className="my-4" />
-        
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 overflow-hidden mt-6">
+          {/* Column 1: Branches Area */}
           <div className="lg:col-span-3 flex flex-col overflow-hidden">
+            {/* Remote Branches Search (moved inside Column 1) */}
+            <BranchSearch 
+              remoteBranches={remoteBranches}
+              localBranches={localBranches}
+              onSearch={handleSearch}
+              onSelectRemoteBranch={handleSwitchBranch}
+              onScrollEnd={fetchMoreRemoteBranches}
+            />
+            
+            <Separator className="my-4" />
+            
+            {/* Local Branches */}
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Local Branches</h2>
               <BranchCleanupButton onCleanup={handleCleanupBranches} isLoading={isLoading} />
@@ -94,6 +91,7 @@ const GitBranchManager: React.FC = () => {
             />
           </div>
           
+          {/* Column 2: Command Output */}
           <div className="lg:col-span-1 overflow-hidden flex flex-col h-full">
             <GitOutput output={gitOutput} />
           </div>
