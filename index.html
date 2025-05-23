@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -9,12 +10,18 @@
     <meta property="og:title" content="qa-branches-manager" />
     <meta property="og:description" content="QA Scriptcase Project" />
     <meta property="og:type" content="website" />
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/src/index.css" as="style" />
+    <!-- DNS prefetching -->
+    <link rel="dns-prefetch" href="https://cdn.gpteng.co" />
+    <!-- Preconnect to important domains -->
+    <link rel="preconnect" href="https://cdn.gpteng.co" crossorigin />
   </head>
 
   <body>
     <div id="root"></div>
     <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
+    <script src="https://cdn.gpteng.co/gptengineer.js" type="module" defer></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

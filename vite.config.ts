@@ -1,8 +1,9 @@
-
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import { splitVendorChunkPlugin } from 'vite';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -23,16 +24,56 @@ export default defineConfig(({ mode }) => ({
   build: {
     // Output to dist/manager for unified build
     outDir: 'dist/manager',
-    emptyOutDir: true
+    emptyOutDir: true,
+    // Enable source map for development only
+    sourcemap: mode === 'development',
+    // Optimize chunks for better browser caching
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom', 'react-router-dom'],
+          ui: [
+            '@radix-ui/react-separator', 
+            '@radix-ui/react-toast',
+            '@radix-ui/react-tooltip',
+            // Other UI components are split automatically
+          ],
+          tanstack: ['@tanstack/react-query'],
+        },
+      },
+    },
+    // Minify output for production
+    minify: mode !== 'development',
+    // Set chunk size warning limit
+    chunkSizeWarningLimit: 1000,
   },
   plugins: [
-    react(),
-    mode === 'development' &&
-    componentTagger(),
+    react({
+      // Use SWC's built-in minification in development
+      plugins: mode === 'development' ? [] : undefined,
+    }),
+    // Automatically split vendor chunks
+    splitVendorChunkPlugin(),
+    // Bundle analyzer in analyze mode only
+    mode === 'analyze' && visualizer({
+      open: true,
+      gzipSize: true,
+      brotliSize: true,
+    }),
+    mode === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  // Optimize deps prefetching
+  optimizeDeps: {
+    include: [
+      'react', 
+      'react-dom', 
+      'react-router-dom',
+      '@tanstack/react-query'
+    ],
   },
 }));

@@ -1,15 +1,18 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { Separator } from '@/components/ui/separator';
 import GitHeader from '@/components/GitHeader';
-import BranchList from '@/components/BranchList';
-import BranchSearch from '@/components/BranchSearch';
-import GitOutput from '@/components/GitOutput';
-import BranchCleanupButton from './BranchCleanupButton';
-import UpdateAllBranchesButton from './UpdateAllBranchesButton';
 import TopProgressBar from './TopProgressBar';
 import Footer from './Footer';
 import { useGitOperations } from '@/hooks/useGitOperations';
 import { useConfig } from '@/contexts/ConfigContext';
+
+// Lazy load components that aren't needed for initial render
+const BranchList = lazy(() => import('@/components/BranchList'));
+const BranchSearch = lazy(() => import('@/components/BranchSearch'));
+const GitOutput = lazy(() => import('@/components/GitOutput'));
+const BranchCleanupButton = lazy(() => import('./BranchCleanupButton'));
+const UpdateAllBranchesButton = lazy(() => import('./UpdateAllBranchesButton'));
 
 const GitBranchManager: React.FC = () => {
   const { config } = useConfig();
@@ -30,16 +33,21 @@ const GitBranchManager: React.FC = () => {
     handleCleanupBranches,
     handleSearch,
     localBranchesHasMore,
-    triggerReloadLocalBranches
   } = useGitOperations();
   
   const [isUpdatingCurrentBranch, setIsUpdatingCurrentBranch] = useState(false);
   const hasLocalBranches = localBranches.length > 0 || isLoading;
 
   useEffect(() => {
+    // Only fetch data if configuration is loaded
     if (config.isLoaded) {
-      fetchLocalBranches();
-      fetchRemoteBranches();
+      // Use a small delay to prioritize rendering the UI first
+      const timeoutId = setTimeout(() => {
+        fetchLocalBranches();
+        fetchRemoteBranches();
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [config.isLoaded]);
 
@@ -64,13 +72,15 @@ const GitBranchManager: React.FC = () => {
           {/* Column 1: Branches Area */}
           <div className="lg:col-span-4 flex flex-col overflow-hidden">
             {/* Remote Branches Search (moved inside Column 1) */}
-            <BranchSearch 
-              remoteBranches={remoteBranches}
-              localBranches={localBranches}
-              onSearch={handleSearch}
-              onSelectRemoteBranch={handleSwitchBranch}
-              onScrollEnd={fetchMoreRemoteBranches}
-            />
+            <Suspense fallback={<div className="h-20 bg-gray-100 animate-pulse rounded" />}>
+              <BranchSearch 
+                remoteBranches={remoteBranches}
+                localBranches={localBranches}
+                onSearch={handleSearch}
+                onSelectRemoteBranch={handleSwitchBranch}
+                onScrollEnd={fetchMoreRemoteBranches}
+              />
+            </Suspense>
             
             <Separator className="my-4" />
             
@@ -79,31 +89,39 @@ const GitBranchManager: React.FC = () => {
               <h2 className="text-xl font-semibold whitespace-nowrap mr-4">Local Branches</h2>
               {hasLocalBranches && (
                 <div className="flex items-center">
-                  <BranchCleanupButton onCleanup={handleCleanupBranches} isLoading={isLoading} />
-                  <UpdateAllBranchesButton 
-                    onUpdateAllBranches={handleUpdateAllBranches} 
-                    isUpdating={isUpdatingAllBranches} 
-                  />
+                  <Suspense fallback={<div className="w-16 h-8 bg-gray-100 animate-pulse rounded" />}>
+                    <BranchCleanupButton onCleanup={handleCleanupBranches} isLoading={isLoading} />
+                  </Suspense>
+                  <Suspense fallback={<div className="w-16 h-8 ml-2 bg-gray-100 animate-pulse rounded" />}>
+                    <UpdateAllBranchesButton 
+                      onUpdateAllBranches={handleUpdateAllBranches} 
+                      isUpdating={isUpdatingAllBranches} 
+                    />
+                  </Suspense>
                 </div>
               )}
             </div>
             
-            <BranchList 
-              branches={localBranches}
-              onSwitchBranch={handleSwitchBranch}
-              onDeleteBranch={handleDeleteBranch}
-              onUpdateCurrentBranch={updateCurrentBranchWithTracking}
-              isLoading={isLoading}
-              isUpdatingCurrentBranch={isUpdatingCurrentBranch}
-              onScrollEnd={fetchMoreLocalBranches}
-              hasMore={localBranchesHasMore}
-              className="flex-1 overflow-hidden"
-            />
+            <Suspense fallback={<div className="flex-1 bg-gray-100 animate-pulse rounded" />}>
+              <BranchList 
+                branches={localBranches}
+                onSwitchBranch={handleSwitchBranch}
+                onDeleteBranch={handleDeleteBranch}
+                onUpdateCurrentBranch={updateCurrentBranchWithTracking}
+                isLoading={isLoading}
+                isUpdatingCurrentBranch={isUpdatingCurrentBranch}
+                onScrollEnd={fetchMoreLocalBranches}
+                hasMore={localBranchesHasMore}
+                className="flex-1 overflow-hidden"
+              />
+            </Suspense>
           </div>
           
           {/* Column 2: Command Output */}
           <div className="lg:col-span-2 overflow-hidden flex flex-col h-full">
-            <GitOutput output={gitOutput} />
+            <Suspense fallback={<div className="h-full bg-gray-100 animate-pulse rounded" />}>
+              <GitOutput output={gitOutput} />
+            </Suspense>
           </div>
         </div>
         <Footer />
