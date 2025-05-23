@@ -71,9 +71,42 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
           </span>
         );
       }
+      // Highlight "Already up to date" message
+      else if (line.includes('Already up to date')) {
+        return (
+          <span key={index} className="text-[#7ce77c] block font-medium">
+            {line}
+          </span>
+        );
+      }
+      // Highlight "Switched to branch" message
+      else if (line.includes('Switched to branch')) {
+        return (
+          <span key={index} className="text-[#7ce77c] block font-medium">
+            {line}
+          </span>
+        );
+      }
+      // Highlight "Your branch is up to date with" message
+      else if (line.includes('Your branch is up to date with')) {
+        return (
+          <span key={index} className="text-[#7ce77c] block font-medium">
+            {line}
+          </span>
+        );
+      }
+      // Standard +/- lines (beginning with + or -)
       else if (line.startsWith('-') || line.includes('-----')) {
         return (
           <span key={index} className="text-[#ea384c] block">
+            {line}
+          </span>
+        );
+      }
+      // Highlight "D	" message
+      else if (line.includes('D	')) {
+        return (
+          <span key={index} className="text-[#ea384c] block font-medium">
             {line}
           </span>
         );
@@ -94,22 +127,6 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
           </span>
         );
       }
-      // Highlight "Already up to date" message
-      else if (line.includes('Already up to date')) {
-        return (
-          <span key={index} className="text-[#7ce77c] block font-medium">
-            {line}
-          </span>
-        );
-      }
-      // Highlight "Switched to branch" message
-      else if (line.includes('Switched to branch')) {
-        return (
-          <span key={index} className="text-[#7ce77c] block font-medium">
-            {line}
-          </span>
-        );
-      }
       // Highlight error messages
       else if (line.includes('error:') || line.includes('fatal:')) {
         return (
@@ -122,6 +139,14 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
       else if (line.includes('would be overwritten by merge')) {
         return (
           <span key={index} className="text-[#ea384c] block font-medium">
+            {line}
+          </span>
+        );
+      }
+      // Highlight "M	" message
+      else if (line.includes('M	')) {
+        return (
+          <span key={index} className="text-[#FEF7CD] block font-medium">
             {line}
           </span>
         );

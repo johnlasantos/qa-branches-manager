@@ -57,12 +57,12 @@ const GitBranchManager: React.FC = () => {
   return (
     <>
       <TopProgressBar isLoading={isLoading || isUpdatingAllBranches} />
-      <div className="container mx-auto px-4 py-6 max-w-7xl h-screen flex flex-col overflow-hidden">
+      <div className="container mx-auto px-4 py-6 max-w-8xl h-screen flex flex-col overflow-hidden">
         <GitHeader />
         
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 overflow-hidden mt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 flex-1 overflow-hidden mt-6">
           {/* Column 1: Branches Area */}
-          <div className="lg:col-span-3 flex flex-col overflow-hidden">
+          <div className="lg:col-span-4 flex flex-col overflow-hidden">
             {/* Remote Branches Search (moved inside Column 1) */}
             <BranchSearch 
               remoteBranches={remoteBranches}
@@ -76,7 +76,7 @@ const GitBranchManager: React.FC = () => {
             
             {/* Local Branches */}
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Local Branches</h2>
+              <h2 className="text-xl font-semibold whitespace-nowrap mr-4">Local Branches</h2>
               <div className="flex items-center">
                 <BranchCleanupButton onCleanup={handleCleanupBranches} isLoading={isLoading} />
                 <UpdateAllBranchesButton 
@@ -101,7 +101,7 @@ const GitBranchManager: React.FC = () => {
           </div>
           
           {/* Column 2: Command Output */}
-          <div className="lg:col-span-1 overflow-hidden flex flex-col h-full">
+          <div className="lg:col-span-2 overflow-hidden flex flex-col h-full">
             <GitOutput output={gitOutput} />
           </div>
         </div>
