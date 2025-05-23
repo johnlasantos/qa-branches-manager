@@ -31,9 +31,11 @@ export default defineConfig(({ mode }) => ({
     // Optimize chunks for better browser caching
     rollupOptions: {
       output: {
+        // Use function form of manualChunks for compatibility with splitVendorChunk
         manualChunks(id) {
+          // Make sure React and its ecosystem are bundled together to avoid context issues
           if (id.includes('node_modules')) {
-            if (id.includes('react') && !id.includes('@tanstack')) {
+            if (id.includes('react') || id.includes('scheduler') || id.includes('prop-types') || id.includes('use-sync-external-store')) {
               return 'react-vendor';
             }
             
@@ -76,13 +78,15 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Optimize deps prefetching
+  // Optimize deps prefetching - ensure all React packages are included together
   optimizeDeps: {
     include: [
       'react', 
       'react-dom', 
       'react-router-dom',
-      '@tanstack/react-query'
+      '@tanstack/react-query',
+      'scheduler',
+      'prop-types'
     ],
   },
 }));

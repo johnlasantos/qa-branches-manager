@@ -1,3 +1,4 @@
+
 const express = require('express');
 const cors = require('cors');
 const { exec } = require('child_process');
@@ -121,8 +122,8 @@ async function updateRepositoryBackground() {
     lastBackgroundUpdateTime = now;
     
     try {
-      // Run a light fetch to update refs without the heavyweight prune operation
-      await runGitCommand('git remote update origin --quiet', null, 0);
+      // Run a fetch to update refs without the quiet flag (which is not supported)
+      await runGitCommand('git remote update origin', null, 0);
       console.log('Background repository update completed');
       
       // Clear relevant caches after update
