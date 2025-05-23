@@ -90,6 +90,7 @@ const BranchList: React.FC<BranchListProps> = ({
   };
 
   const branches = sortBranches(unsortedBranches);
+  const hasBranches = branches.length > 0 || isLoading;
 
   const normalizedBranches = branches.map(branch => ({
     ...branch,
@@ -152,41 +153,43 @@ const BranchList: React.FC<BranchListProps> = ({
 
   return (
     <div className={cn("w-full flex flex-col", className)}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="relative flex-1 mr-2">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-          <Input
-            type="text"
-            placeholder="Search local branches..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-input"
-          />
+      {hasBranches && (
+        <div className="flex items-center justify-between mb-4">
+          <div className="relative flex-1 mr-2">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <Input
+              type="text"
+              placeholder="Search local branches..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-input"
+            />
+          </div>
+          
+          {onReloadLocalBranches && (
+            <TooltipProvider>
+              <Tooltip open={openTooltips['reload-local']} onOpenChange={(open) => handleTooltipOpenChange(open, 'reload-local')}>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={() => {
+                      if (onReloadLocalBranches) onReloadLocalBranches();
+                      setOpenTooltips(prev => ({ ...prev, 'reload-local': false }));
+                    }}
+                    className="shrink-0"
+                  >
+                    <RefreshCcw className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Reload local branches</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
-        
-        {onReloadLocalBranches && (
-          <TooltipProvider>
-            <Tooltip open={openTooltips['reload-local']} onOpenChange={(open) => handleTooltipOpenChange(open, 'reload-local')}>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  onClick={() => {
-                    if (onReloadLocalBranches) onReloadLocalBranches();
-                    setOpenTooltips(prev => ({ ...prev, 'reload-local': false }));
-                  }}
-                  className="shrink-0"
-                >
-                  <RefreshCcw className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Reload local branches</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
-      </div>
+      )}
 
       <ScrollArea ref={scrollAreaRef} className="h-[calc(100vh-24rem)] overflow-auto pr-2 flex-1">
         <div className="space-y-2">

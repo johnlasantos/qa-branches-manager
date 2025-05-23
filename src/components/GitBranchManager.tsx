@@ -35,6 +35,7 @@ const GitBranchManager: React.FC = () => {
   } = useGitOperations();
   
   const [isUpdatingCurrentBranch, setIsUpdatingCurrentBranch] = useState(false);
+  const hasLocalBranches = localBranches.length > 0 || isLoading;
 
   useEffect(() => {
     if (config.isLoaded) {
@@ -77,13 +78,15 @@ const GitBranchManager: React.FC = () => {
             {/* Local Branches */}
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold whitespace-nowrap mr-4">Local Branches</h2>
-              <div className="flex items-center">
-                <BranchCleanupButton onCleanup={handleCleanupBranches} isLoading={isLoading} />
-                <UpdateAllBranchesButton 
-                  onUpdateAllBranches={handleUpdateAllBranches} 
-                  isUpdating={isUpdatingAllBranches} 
-                />
-              </div>
+              {hasLocalBranches && (
+                <div className="flex items-center">
+                  <BranchCleanupButton onCleanup={handleCleanupBranches} isLoading={isLoading} />
+                  <UpdateAllBranchesButton 
+                    onUpdateAllBranches={handleUpdateAllBranches} 
+                    isUpdating={isUpdatingAllBranches} 
+                  />
+                </div>
+              )}
             </div>
             
             <BranchList 
