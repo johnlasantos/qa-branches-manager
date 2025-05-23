@@ -33,9 +33,17 @@ export default defineConfig(({ mode }) => ({
       output: {
         // Use function form of manualChunks for compatibility with splitVendorChunk
         manualChunks(id) {
-          // Make sure React and its ecosystem are bundled together to avoid context issues
+          // Bundle React and ALL its dependencies together to prevent runtime errors
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('scheduler') || id.includes('prop-types') || id.includes('use-sync-external-store')) {
+            if (
+              id.includes('react') ||
+              id.includes('react-dom') ||
+              id.includes('scheduler') ||
+              id.includes('prop-types') ||
+              id.includes('use-sync-external-store') ||
+              id.includes('jsx-runtime') ||
+              id.includes('jsx-dev-runtime')
+            ) {
               return 'react-vendor';
             }
             
