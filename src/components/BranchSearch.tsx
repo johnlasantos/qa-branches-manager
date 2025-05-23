@@ -119,10 +119,7 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
 
   const handleBranchClick = (branchName: string) => {
     setSelectedBranch(branchName);
-    setSearchQuery(branchName);
-    if (inputRef.current) {
-      inputRef.current.value = branchName;
-    }
+    // No longer setting the search input value
     // Opening the import dialog immediately when branch is clicked
     setShowImportDialog(true);
   };
@@ -178,12 +175,10 @@ const BranchSearch: React.FC<BranchSearchProps> = ({
                 setShowImportDialog(false);
                 if (selectedBranch) {
                   onSelectRemoteBranch(selectedBranch, { imported: true });
+                  // Clear the search query after importing but don't update input
                   setSearchQuery('');
                   setSelectedBranch(null);
                   setShowSuggestions(false);
-                  if (inputRef.current) {
-                    inputRef.current.value = '';
-                  }
                 }
               }}
             >

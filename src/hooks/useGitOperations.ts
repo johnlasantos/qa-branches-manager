@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Branch } from '@/components/BranchList';
@@ -9,6 +10,7 @@ import {
   switchBranch, 
   deleteBranch, 
   updateCurrentBranch,
+  updateAllBranches,
   cleanupBranches,
   searchBranches
 } from '@/services/gitService';
@@ -26,6 +28,7 @@ export const useGitOperations = () => {
   const [localBranchesTotal, setLocalBranchesTotal] = useState<number>(0);
   const [remoteBranchesTotal, setRemoteBranchesTotal] = useState<number>(0);
   const [reloadTrigger, setReloadTrigger] = useState<number>(0);
+  const [isUpdatingAllBranches, setIsUpdatingAllBranches] = useState<boolean>(false);
 
   // Load initial set or reset branches
   const fetchLocalBranches = useCallback(async (reset = true) => {
@@ -194,6 +197,53 @@ export const useGitOperations = () => {
     }
   };
 
+  const handleUpdateAllBranches = async () => {
+    setIsUpdatingAllBranches(true);
+    setGitOutput('');
+    try {
+      const result = await updateAllBranches(config.apiBaseUrl);
+      
+      // Format the output to display in the GitOutput component
+      let formattedOutput = "Updating all branches:\n\n";
+      let successCount = 0;
+      
+      result.results.forEach(branchResult => {
+        if (branchResult.success) {
+          successCount++;
+          formattedOutput += `✅ ${branchResult.branch}: ${branchResult.output.trim()}\n\n`;
+        } else {
+          formattedOutput += `❌ ${branchResult.branch}: ${branchResult.output.trim()}\n\n`;
+        }
+      });
+      
+      formattedOutput += `\nSummary: ${successCount} of ${result.results.length} branches updated successfully.`;
+      
+      setGitOutput(formattedOutput);
+      
+      // Important: Set loading to false IMMEDIATELY before showing the toast
+      setIsUpdatingAllBranches(false);
+      
+      if (result.overallSuccess) {
+        toast.success('All branches updated', {
+          description: `${successCount} of ${result.results.length} branches updated successfully.`,
+        });
+      } else {
+        toast.warning('Some branches failed to update', {
+          description: `${successCount} of ${result.results.length} branches updated successfully.`,
+        });
+      }
+      
+      // Refresh local branches in the background without blocking UI
+      setTimeout(() => {
+        fetchLocalBranches(true);
+      }, 100);
+    } catch (error) {
+      // Important: Set loading to false immediately in case of error
+      setIsUpdatingAllBranches(false);
+      toast.error('Failed to update branches');
+    }
+  };
+
   const handleCleanupBranches = async () => {
     setIsLoading(true);
     setGitOutput('');
@@ -240,6 +290,7 @@ export const useGitOperations = () => {
     remoteBranches,
     gitOutput,
     isLoading,
+    isUpdatingAllBranches,
     fetchLocalBranches,
     fetchMoreLocalBranches,
     fetchRemoteBranches,
@@ -247,6 +298,7 @@ export const useGitOperations = () => {
     handleSwitchBranch,
     handleDeleteBranch,
     handleUpdateCurrentBranch,
+    handleUpdateAllBranches,
     handleCleanupBranches,
     handleSearch,
     localBranchesHasMore,

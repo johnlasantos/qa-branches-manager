@@ -1,3 +1,4 @@
+
 // This service connects to the Git backend API
 import { Branch } from "@/components/BranchList";
 import { RemoteBranch } from "@/components/BranchSearch";
@@ -89,6 +90,13 @@ export const updateCurrentBranch = async (apiBaseUrl: string = ''): Promise<stri
     method: 'POST'
   });
   return data.message;
+};
+
+export const updateAllBranches = async (apiBaseUrl: string = ''): Promise<{ overallSuccess: boolean, results: Array<{ branch: string, success: boolean, output: string }> }> => {
+  const data = await apiRequest('update-all-branches', apiBaseUrl, {
+    method: 'POST'
+  });
+  return data;
 };
 
 export const cleanupBranches = async (apiBaseUrl: string = ''): Promise<string> => {

@@ -6,6 +6,7 @@ import BranchList from '@/components/BranchList';
 import BranchSearch from '@/components/BranchSearch';
 import GitOutput from '@/components/GitOutput';
 import BranchCleanupButton from './BranchCleanupButton';
+import UpdateAllBranchesButton from './UpdateAllBranchesButton';
 import TopProgressBar from './TopProgressBar';
 import Footer from './Footer';
 import { useGitOperations } from '@/hooks/useGitOperations';
@@ -18,6 +19,7 @@ const GitBranchManager: React.FC = () => {
     remoteBranches,
     gitOutput,
     isLoading,
+    isUpdatingAllBranches,
     fetchLocalBranches,
     fetchMoreLocalBranches,
     fetchRemoteBranches,
@@ -25,6 +27,7 @@ const GitBranchManager: React.FC = () => {
     handleSwitchBranch,
     handleDeleteBranch,
     handleUpdateCurrentBranch,
+    handleUpdateAllBranches,
     handleCleanupBranches,
     handleSearch,
     localBranchesHasMore,
@@ -53,7 +56,7 @@ const GitBranchManager: React.FC = () => {
 
   return (
     <>
-      <TopProgressBar isLoading={isLoading} />
+      <TopProgressBar isLoading={isLoading || isUpdatingAllBranches} />
       <div className="container mx-auto px-4 py-6 max-w-7xl h-screen flex flex-col overflow-hidden">
         <GitHeader />
         
@@ -74,7 +77,13 @@ const GitBranchManager: React.FC = () => {
             {/* Local Branches */}
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Local Branches</h2>
-              <BranchCleanupButton onCleanup={handleCleanupBranches} isLoading={isLoading} />
+              <div className="flex items-center">
+                <BranchCleanupButton onCleanup={handleCleanupBranches} isLoading={isLoading} />
+                <UpdateAllBranchesButton 
+                  onUpdateAllBranches={handleUpdateAllBranches} 
+                  isUpdating={isUpdatingAllBranches} 
+                />
+              </div>
             </div>
             
             <BranchList 
