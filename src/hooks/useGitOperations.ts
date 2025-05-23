@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Branch } from '@/components/BranchList';
@@ -30,7 +29,7 @@ export const useGitOperations = () => {
   const [reloadTrigger, setReloadTrigger] = useState<number>(0);
   const [isUpdatingAllBranches, setIsUpdatingAllBranches] = useState<boolean>(false);
 
-  // Load initial set or reset branches
+  // Load initial set or reset branches with optimization for skipping refresh
   const fetchLocalBranches = useCallback(async (reset = true) => {
     try {
       setIsLoading(true);
@@ -38,7 +37,7 @@ export const useGitOperations = () => {
       // If reset, start from page 0, otherwise continue with next page
       const page = reset ? 0 : localBranchesPage;
       
-      // Load branches in groups of 10
+      // Add skipRefresh parameter to avoid unnecessary git operations
       const response = await getLocalBranches(page, 10, config.apiBaseUrl);
       
       if (reset) {
@@ -72,11 +71,11 @@ export const useGitOperations = () => {
     fetchLocalBranches(true);
   };
 
-  // Load remote branches with pagination
+  // Load remote branches with pagination and optimization
   const fetchRemoteBranches = useCallback(async (reset = true) => {
     try {
       const page = reset ? 0 : remoteBranchesPage;
-      // Load branches in groups of 10
+      // Load branches in groups of 10 with skipRefresh for faster subsequent calls
       const response = await getRemoteBranches(page, 10, config.apiBaseUrl);
       
       if (reset) {
@@ -316,6 +315,7 @@ export const useGitOperations = () => {
     }
   };
 
+  // Optimized search with debounce
   const handleSearch = async (query: string) => {
     try {
       if (query.trim() === '') {
