@@ -47,8 +47,6 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react({
-      // Ensure proper JSX runtime configuration
-      jsxRuntime: 'automatic',
       // Use SWC's built-in minification in development
       plugins: mode === 'development' ? [] : undefined,
     }),
