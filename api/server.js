@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const { exec } = require('child_process');
@@ -183,12 +182,9 @@ app.get('/branches', async (req, res) => {
     const page = parseInt(req.query.page) || 0;
     const limit = parseInt(req.query.limit) || 10;
     const skipRefresh = req.query.skipRefresh === 'true';
-    const cacheKey = `branches_${page}_${limit}`;
     
-    // Check if we already have cached data
-    if (!skipRefresh && gitCache.has(cacheKey)) {
-      return res.json(gitCache.get(cacheKey));
-    }
+    // Note: We've removed the cache check and will always execute Git commands
+    // to get the most up-to-date branch list
 
     // Get current branch using faster git-rev-parse instead of git branch
     const currentBranchPromise = runGitCommand('git rev-parse --abbrev-ref HEAD');
@@ -252,8 +248,7 @@ app.get('/branches', async (req, res) => {
       }
     };
     
-    // Cache the result
-    gitCache.set(cacheKey, response, 60); // 1 minute cache
+    // Note: We've removed caching the result - always returning fresh data
     
     // Return response
     res.json(response);

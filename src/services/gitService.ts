@@ -67,6 +67,7 @@ export const getLocalBranches = async (
   limit: number = 10,
   apiBaseUrl: string = ''
 ): Promise<PaginatedResponse<Branch>> => {
+  // Always get fresh branch data by not using skipRefresh
   return await apiRequest(`branches?page=${page}&limit=${limit}`, apiBaseUrl);
 };
 
