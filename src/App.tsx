@@ -22,7 +22,7 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: 1000 * 60 * 5, // 5 minutes
       retry: 1,
-      suspense: false,
+      // Remove the suspense property as it's not supported in this context
     },
   },
 });
