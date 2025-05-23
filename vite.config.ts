@@ -31,31 +31,10 @@ export default defineConfig(({ mode }) => ({
     // Optimize chunks for better browser caching
     rollupOptions: {
       output: {
-        // Use function form of manualChunks for compatibility with splitVendorChunk
+        // Simplified chunking strategy to avoid React context issues
         manualChunks(id) {
-          // Bundle React and ALL its dependencies together to prevent runtime errors
+          // Bundle all node_modules together in a single vendor chunk
           if (id.includes('node_modules')) {
-            if (
-              id.includes('react') ||
-              id.includes('react-dom') ||
-              id.includes('scheduler') ||
-              id.includes('prop-types') ||
-              id.includes('use-sync-external-store') ||
-              id.includes('jsx-runtime') ||
-              id.includes('jsx-dev-runtime')
-            ) {
-              return 'react-vendor';
-            }
-            
-            if (id.includes('@radix-ui')) {
-              return 'ui-vendor';
-            }
-            
-            if (id.includes('@tanstack/react-query')) {
-              return 'tanstack-vendor';
-            }
-            
-            // All other node_modules go into the default vendor chunk
             return 'vendor';
           }
         }
@@ -68,6 +47,8 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react({
+      // Ensure proper JSX runtime configuration
+      jsxRuntime: 'automatic',
       // Use SWC's built-in minification in development
       plugins: mode === 'development' ? [] : undefined,
     }),
@@ -86,7 +67,7 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Optimize deps prefetching - ensure all React packages are included together
+  // Optimize deps prefetching - ensure React is properly handled
   optimizeDeps: {
     include: [
       'react', 
