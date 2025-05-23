@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 import GitHeader from '@/components/GitHeader';
@@ -98,7 +97,6 @@ const GitBranchManager: React.FC = () => {
               isUpdatingCurrentBranch={isUpdatingCurrentBranch}
               onScrollEnd={fetchMoreLocalBranches}
               hasMore={localBranchesHasMore}
-              onReloadLocalBranches={triggerReloadLocalBranches}
               className="flex-1 overflow-hidden"
             />
           </div>

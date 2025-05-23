@@ -165,29 +165,6 @@ const BranchList: React.FC<BranchListProps> = ({
               className="pl-9 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-input"
             />
           </div>
-          
-          {onReloadLocalBranches && (
-            <TooltipProvider>
-              <Tooltip open={openTooltips['reload-local']} onOpenChange={(open) => handleTooltipOpenChange(open, 'reload-local')}>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    onClick={() => {
-                      if (onReloadLocalBranches) onReloadLocalBranches();
-                      setOpenTooltips(prev => ({ ...prev, 'reload-local': false }));
-                    }}
-                    className="shrink-0"
-                  >
-                    <RefreshCcw className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Reload local branches</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
         </div>
       )}
 
