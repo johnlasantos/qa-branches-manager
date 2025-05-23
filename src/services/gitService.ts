@@ -48,6 +48,15 @@ export interface PaginatedResponse<T> {
   };
 }
 
+export interface BranchUpdateResult {
+  overallSuccess: boolean;
+  results: Array<{ 
+    branch: string;
+    success: boolean;
+    output: string;
+  }>;
+}
+
 export const getConfig = async (apiBaseUrl: string = ''): Promise<Config> => {
   const data = await apiRequest('config', apiBaseUrl);
   return data;
@@ -107,7 +116,7 @@ export const updateCurrentBranch = async (apiBaseUrl: string = ''): Promise<stri
   return data.stdout || data.message || '';
 };
 
-export const updateAllBranches = async (apiBaseUrl: string = ''): Promise<{ overallSuccess: boolean, results: Array<{ branch: string, success: boolean, output: string }> }> => {
+export const updateAllBranches = async (apiBaseUrl: string = ''): Promise<BranchUpdateResult> => {
   const data = await apiRequest('update-all-branches', apiBaseUrl, {
     method: 'POST'
   });

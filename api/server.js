@@ -341,23 +341,16 @@ app.get('/remote-branches/search', async (req, res) => {
       return res.json(gitCache.get(cacheKey));
     }
     
-    // More efficient command using for-each-ref and grep for searching
-    const command = query.trim() ? 
-      `git for-each-ref --format="%(refname:short)" refs/remotes/origin/ | grep -i "${query}"` : 
-      'git for-each-ref --format="%(refname:short)" refs/remotes/origin/';
+    // Get all remote branches and filter in JavaScript instead of using grep
+    const { stdout } = await runGitCommand('git for-each-ref --format="%(refname:short)" refs/remotes/origin/');
     
-    const { stdout, success } = await runGitCommand(command);
-    
-    // Parse the results, handling the case where grep returns no matches (non-zero exit code)
-    const lines = success ? stdout.split('\n') : [];
-    
-    // Filter branches by search query
-    const allMatchingBranches = lines
+    // Filter branches by search query in JavaScript (more reliable than grep)
+    const allMatchingBranches = stdout
+      .split('\n')
       .filter(Boolean)
-      .map(line => {
-        const name = line.trim().replace('origin/', '');
-        return { name };
-      });
+      .map(line => line.trim().replace('origin/', ''))
+      .filter(name => name.toLowerCase().includes(query.toLowerCase()))
+      .map(name => ({ name }));
     
     // Get total count for pagination info
     const total = allMatchingBranches.length;
@@ -387,7 +380,7 @@ app.get('/remote-branches/search', async (req, res) => {
   }
 });
 
-// Switch branch - OPTIMIZED
+// Switch branch - OPTIMIZED with JavaScript-based branch detection
 app.post('/checkout', async (req, res) => {
   try {
     const { branch } = req.body;
@@ -402,18 +395,30 @@ app.post('/checkout', async (req, res) => {
     // Clear cache for branches since the current branch is changing
     clearCache('branches');
     
-    // First check if the branch exists locally using faster for-each-ref
+    // Get local branches using for-each-ref and detect using JavaScript
     const { stdout: localBranchOutput } = await runGitCommand(
-      `git for-each-ref --format="%(refname:short)" refs/heads/ | grep -Fx "${branch}" || echo ""`
+      'git for-each-ref --format="%(refname:short)" refs/heads/'
     );
     
-    // Check if branch exists remotely
+    // Get remote branches using for-each-ref and detect using JavaScript
     const { stdout: remoteBranchOutput } = await runGitCommand(
-      `git for-each-ref --format="%(refname:short)" refs/remotes/origin/ | grep -Fx "origin/${branch}" || echo ""`
+      'git for-each-ref --format="%(refname:short)" refs/remotes/origin/'
     );
     
-    const branchExistsLocally = localBranchOutput.trim() === branch;
-    const branchExistsRemotely = remoteBranchOutput.trim() === `origin/${branch}`;
+    // Parse branch lists
+    const localBranches = localBranchOutput
+      .split('\n')
+      .filter(Boolean)
+      .map(b => b.trim());
+    
+    const remoteBranches = remoteBranchOutput
+      .split('\n')
+      .filter(Boolean)
+      .map(b => b.trim());
+    
+    // Check if branch exists locally or remotely using JavaScript includes()
+    const branchExistsLocally = localBranches.includes(branch);
+    const branchExistsRemotely = remoteBranches.includes(`origin/${branch}`);
     
     let result;
     
@@ -461,7 +466,7 @@ app.post('/checkout', async (req, res) => {
   }
 });
 
-// Delete branch - OPTIMIZED
+// Delete branch - OPTIMIZED with JavaScript-based branch detection
 app.post('/delete-branch', async (req, res) => {
   try {
     const { branch } = req.body;
@@ -572,7 +577,7 @@ app.post('/pull', async (req, res) => {
   }
 });
 
-// Cleanup branches (prune stale branches) - OPTIMIZED
+// Cleanup branches (prune stale branches) - OPTIMIZED with JavaScript-based branch detection
 app.post('/cleanup', async (req, res) => {
   try {
     // Clear cache for branches since we're modifying the branch list
@@ -695,7 +700,7 @@ app.get('/status', async (req, res) => {
   }
 });
 
-// Update all branches endpoint - OPTIMIZED
+// Update all branches endpoint - OPTIMIZED with sequential execution
 app.post('/update-all-branches', async (req, res) => {
   try {
     // Clear branch caches since we'll be updating branches
@@ -724,31 +729,29 @@ app.post('/update-all-branches', async (req, res) => {
       remoteBranches.includes(localBranch)
     );
     
-    // Update branches in parallel for better performance
-    const updatePromises = branchesToUpdate.map(async branch => {
+    // IMPORTANT: Run updates SEQUENTIALLY using for await...of instead of Promise.all
+    // to avoid git lock conflicts
+    const results = [];
+    
+    for (const branch of branchesToUpdate) {
       // Checkout the branch
       const checkoutResult = await runGitCommand(`git checkout ${branch}`);
       if (!checkoutResult.success) {
-        return { 
+        results.push({ 
           branch, 
           success: false, 
           output: `Failed to checkout branch: ${checkoutResult.stderr || checkoutResult.stdout}` 
-        };
+        });
+        continue; // Skip pull if checkout failed
       }
       
       // Pull the latest changes
       const pullResult = await runGitCommand(`git pull origin ${branch}`);
-      return { 
+      results.push({ 
         branch, 
         success: pullResult.success, 
         output: pullResult.stderr || pullResult.stdout || 'No output'
-      };
-    });
-    
-    // Run updates sequentially to avoid git lock conflicts
-    const results = [];
-    for (const updatePromise of updatePromises) {
-      results.push(await updatePromise);
+      });
     }
     
     // Switch back to the original branch

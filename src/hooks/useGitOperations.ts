@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Branch } from '@/components/BranchList';
@@ -11,7 +12,8 @@ import {
   updateCurrentBranch,
   updateAllBranches,
   cleanupBranches,
-  searchBranches
+  searchBranches,
+  BranchUpdateResult
 } from '@/services/gitService';
 
 export const useGitOperations = () => {
