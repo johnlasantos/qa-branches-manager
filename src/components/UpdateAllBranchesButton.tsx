@@ -50,7 +50,7 @@ const UpdateAllBranchesButton: React.FC<UpdateAllBranchesButtonProps> = ({
                 <RefreshCw 
                   className={`h-4 w-4 mr-1 ${isUpdating ? 'animate-spin' : ''}`} 
                 />
-                Update All
+                Update local branches
               </Button>
             </TooltipTrigger>
           </AlertDialogTrigger>
