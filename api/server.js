@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const { exec } = require('child_process');
@@ -58,10 +57,24 @@ async function runGitCommand(command) {
       cwd: config.repositoryPath,
       windowsHide: true
     });
-    return { success: true, output: stdout, error: stderr };
+    
+    // Always return both stdout and stderr even on success
+    return { 
+      success: true, 
+      stdout: stdout || '', 
+      stderr: stderr || '', 
+      code: 0 
+    };
   } catch (error) {
     console.error(`Git command failed: ${command}`, error);
-    return { success: false, output: '', error: error.message };
+    
+    // Return both stdout and stderr along with the error code
+    return { 
+      success: false, 
+      stdout: error.stdout || '', 
+      stderr: error.stderr || error.message || '', 
+      code: error.code || 1 
+    };
   }
 }
 
@@ -116,8 +129,8 @@ app.get('/branches', async (req, res) => {
     // Make sure we have the latest info
     await runGitCommand('git fetch --prune');
     
-    const { output } = await runGitCommand('git branch -v');
-    const { output: remoteOutput } = await runGitCommand('git branch -r');
+    const { stdout: output } = await runGitCommand('git branch -v');
+    const { stdout: remoteOutput } = await runGitCommand('git branch -r');
 
     // Get all remote branches
     const remoteBranches = remoteOutput
@@ -174,10 +187,10 @@ app.get('/remote-branches', async (req, res) => {
     
     // Fetch to ensure we have the latest remote branches
     await runGitCommand('git fetch --prune');
-    const { output } = await runGitCommand('git branch -r');
+    const { stdout } = await runGitCommand('git branch -r');
     
     // Get all remote branches
-    const allBranches = output
+    const allBranches = stdout
       .split('\n')
       .filter(Boolean)
       .map(line => {
@@ -214,10 +227,10 @@ app.get('/remote-branches/search', async (req, res) => {
     const page = parseInt(req.query.page) || 0;
     const limit = parseInt(req.query.limit) || 10;
     
-    const { output } = await runGitCommand('git branch -r');
+    const { stdout } = await runGitCommand('git branch -r');
     
     // Filter branches by search query
-    const allMatchingBranches = output
+    const allMatchingBranches = stdout
       .split('\n')
       .filter(Boolean)
       .map(line => {
@@ -261,14 +274,14 @@ app.post('/checkout', async (req, res) => {
     }
     
     // First check if the branch exists locally
-    const { output: localBranchOutput } = await runGitCommand('git branch');
+    const { stdout: localBranchOutput } = await runGitCommand('git branch');
     const localBranches = localBranchOutput
       .split('\n')
       .filter(Boolean)
       .map(line => line.replace('*', '').trim());
     
     // Check if branch exists remotely
-    const { output: remoteBranchOutput } = await runGitCommand('git branch -r');
+    const { stdout: remoteBranchOutput } = await runGitCommand('git branch -r');
     const remoteBranches = remoteBranchOutput
       .split('\n')
       .filter(Boolean)
@@ -293,25 +306,38 @@ app.post('/checkout', async (req, res) => {
     } else {
       return res.status(404).json({ 
         success: false, 
-        message: `Branch '${branch}' not found locally or remotely` 
+        message: `Branch '${branch}' not found locally or remotely`,
+        stdout: '',
+        stderr: `Branch '${branch}' not found locally or remotely` 
       });
     }
     
     if (result.success) {
       return res.json({ 
         success: true, 
-        message: `Switched to branch '${branch}'` 
+        message: `Switched to branch '${branch}'`,
+        stdout: result.stdout,
+        stderr: result.stderr
       });
     } else {
-      console.error('Checkout failed:', result.error);
+      console.error('Checkout failed:', result.stderr);
       return res.status(500).json({ 
         success: false, 
-        message: `Failed to switch to branch '${branch}': ${result.error}` 
+        message: `Failed to switch to branch '${branch}': ${result.stderr}`,
+        stdout: result.stdout,
+        stderr: result.stderr,
+        code: result.code
       });
     }
   } catch (error) {
     console.error('Error during checkout:', error);
-    res.status(500).json({ success: false, message: `Failed to switch to branch: ${error.message}` });
+    res.status(500).json({ 
+      success: false, 
+      message: `Failed to switch to branch: ${error.message}`,
+      stdout: '',
+      stderr: error.message,
+      code: error.code || 1
+    });
   }
 });
 
@@ -323,18 +349,22 @@ app.post('/delete-branch', async (req, res) => {
     if (!branch) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Branch name is required' 
+        message: 'Branch name is required',
+        stdout: '',
+        stderr: 'Branch name is required' 
       });
     }
     
     // Check if branch is current
-    const { output: currentBranchOutput } = await runGitCommand('git branch --show-current');
+    const { stdout: currentBranchOutput } = await runGitCommand('git branch --show-current');
     const currentBranch = currentBranchOutput.trim();
     
     if (currentBranch === branch) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Cannot delete the current branch' 
+        message: 'Cannot delete the current branch',
+        stdout: '',
+        stderr: 'Cannot delete the current branch'
       });
     }
     
@@ -344,7 +374,9 @@ app.post('/delete-branch', async (req, res) => {
     if (result.success) {
       res.json({ 
         success: true, 
-        message: `Deleted branch ${branch} (was ${result.output.split(' ').pop().trim()}).` 
+        message: `Deleted branch ${branch}`,
+        stdout: result.stdout,
+        stderr: result.stderr
       });
     } else {
       // If forced deletion is needed
@@ -353,16 +385,30 @@ app.post('/delete-branch', async (req, res) => {
       if (forceResult.success) {
         res.json({ 
           success: true, 
-          message: `Force deleted branch ${branch} (was ${forceResult.output.split(' ').pop().trim()}).` 
+          message: `Force deleted branch ${branch}`,
+          stdout: forceResult.stdout,
+          stderr: forceResult.stderr
         });
       } else {
-        console.error('Force delete failed:', forceResult.error);
-        res.status(500).json({ success: false, message: forceResult.error });
+        console.error('Force delete failed:', forceResult.stderr);
+        res.status(500).json({ 
+          success: false, 
+          message: forceResult.stderr,
+          stdout: forceResult.stdout,
+          stderr: forceResult.stderr,
+          code: forceResult.code
+        });
       }
     }
   } catch (error) {
     console.error('Error during delete branch:', error);
-    res.status(500).json({ success: false, message: `Failed to delete branch: ${error.message}` });
+    res.status(500).json({ 
+      success: false, 
+      message: `Failed to delete branch: ${error.message}`,
+      stdout: '',
+      stderr: error.message,
+      code: error.code || 1
+    });
   }
 });
 
@@ -372,14 +418,31 @@ app.post('/pull', async (req, res) => {
     const result = await runGitCommand('git pull');
     
     if (result.success) {
-      res.json({ success: true, message: result.output || 'Already up to date.' });
+      res.json({ 
+        success: true, 
+        message: result.stdout || 'Already up to date.',
+        stdout: result.stdout,
+        stderr: result.stderr
+      });
     } else {
-      console.error('Pull failed:', result.error);
-      res.status(500).json({ success: false, message: result.error });
+      console.error('Pull failed:', result.stderr);
+      res.status(500).json({ 
+        success: false, 
+        message: result.stderr || 'Pull failed',
+        stdout: result.stdout,
+        stderr: result.stderr,
+        code: result.code
+      });
     }
   } catch (error) {
     console.error('Error during pull:', error);
-    res.status(500).json({ success: false, message: `Failed to pull: ${error.message}` });
+    res.status(500).json({ 
+      success: false, 
+      message: `Failed to pull: ${error.message}`,
+      stdout: '',
+      stderr: error.message,
+      code: error.code || 1
+    });
   }
 });
 
@@ -389,15 +452,18 @@ app.post('/cleanup', async (req, res) => {
     // First, fetch from remote with prune to update our knowledge of remote branches
     const fetchResult = await runGitCommand('git fetch --prune');
     if (!fetchResult.success) {
-      console.error('Fetch failed during cleanup:', fetchResult.error);
+      console.error('Fetch failed during cleanup:', fetchResult.stderr);
       return res.status(500).json({ 
         success: false, 
-        message: `Fetch failed: ${fetchResult.error}` 
+        message: `Fetch failed: ${fetchResult.stderr}`,
+        stdout: fetchResult.stdout,
+        stderr: fetchResult.stderr,
+        code: fetchResult.code
       });
     }
     
     // Get local branches
-    const { output: localOutput } = await runGitCommand('git branch');
+    const { stdout: localOutput } = await runGitCommand('git branch');
     const localBranches = localOutput
       .split('\n')
       .filter(Boolean)
@@ -408,7 +474,7 @@ app.post('/cleanup', async (req, res) => {
       });
     
     // Get remote branches
-    const { output: remoteOutput } = await runGitCommand('git branch -r');
+    const { stdout: remoteOutput } = await runGitCommand('git branch -r');
     const remoteBranches = remoteOutput
       .split('\n')
       .filter(Boolean)
@@ -453,7 +519,7 @@ app.post('/cleanup', async (req, res) => {
       if (deleteResult.success) {
         results.push(`Deleted branch ${branch.name}`);
       } else {
-        errors.push(`Failed to delete ${branch.name}: ${deleteResult.error}`);
+        errors.push(`Failed to delete ${branch.name}: ${deleteResult.stderr}`);
       }
     }
     
@@ -468,13 +534,18 @@ app.post('/cleanup', async (req, res) => {
     res.json({ 
       success: true, 
       message: message,
+      stdout: message,
+      stderr: errors.length > 0 ? errors.join('\n') : '',
       warnings: errors.length > 0 ? errors : undefined
     });
   } catch (error) {
     console.error('Error during cleanup:', error);
     res.status(500).json({ 
       success: false, 
-      message: `Failed to clean up branches: ${error.message}` 
+      message: `Failed to clean up branches: ${error.message}`,
+      stdout: '',
+      stderr: error.message,
+      code: error.code || 1
     });
   }
 });
@@ -485,14 +556,109 @@ app.get('/status', async (req, res) => {
     const result = await runGitCommand('git status');
     
     if (result.success) {
-      res.json({ success: true, status: result.output });
+      res.json({ 
+        success: true, 
+        status: result.stdout,
+        stdout: result.stdout,
+        stderr: result.stderr 
+      });
     } else {
-      console.error('Status command failed:', result.error);
-      res.status(500).json({ success: false, message: result.error });
+      console.error('Status command failed:', result.stderr);
+      res.status(500).json({ 
+        success: false, 
+        message: result.stderr,
+        stdout: result.stdout,
+        stderr: result.stderr,
+        code: result.code
+      });
     }
   } catch (error) {
     console.error('Error getting status:', error);
-    res.status(500).json({ success: false, message: `Failed to get status: ${error.message}` });
+    res.status(500).json({ 
+      success: false, 
+      message: `Failed to get status: ${error.message}`,
+      stdout: '',
+      stderr: error.message,
+      code: error.code || 1
+    });
+  }
+});
+
+// Add the update-all-branches endpoint
+app.post('/update-all-branches', async (req, res) => {
+  try {
+    // First, fetch from remote to get latest information
+    const fetchResult = await runGitCommand('git fetch --prune');
+    
+    // Get local branches
+    const { stdout: localBranchesOutput } = await runGitCommand('git branch');
+    const localBranches = localBranchesOutput
+      .split('\n')
+      .filter(Boolean)
+      .map(line => {
+        const isCurrent = line.startsWith('*');
+        const name = line.replace('*', '').trim();
+        return { name, isCurrent };
+      });
+    
+    // Save current branch to return to it later
+    const currentBranch = localBranches.find(b => b.isCurrent)?.name || 'main';
+    
+    // Get remote branches
+    const { stdout: remoteBranchesOutput } = await runGitCommand('git branch -r');
+    const remoteBranches = remoteBranchesOutput
+      .split('\n')
+      .filter(Boolean)
+      .map(line => line.trim().replace('origin/', ''));
+    
+    // Find local branches that have matching remote branches
+    const branchesToUpdate = localBranches.filter(localBranch => 
+      remoteBranches.includes(localBranch.name)
+    );
+    
+    // Update each branch
+    const results = [];
+    for (const branch of branchesToUpdate) {
+      // Checkout the branch
+      const checkoutResult = await runGitCommand(`git checkout ${branch.name}`);
+      if (!checkoutResult.success) {
+        results.push({ 
+          branch: branch.name, 
+          success: false, 
+          output: `Failed to checkout branch: ${checkoutResult.stderr || checkoutResult.stdout}` 
+        });
+        continue;
+      }
+      
+      // Pull the latest changes
+      const pullResult = await runGitCommand(`git pull origin ${branch.name}`);
+      results.push({ 
+        branch: branch.name, 
+        success: pullResult.success, 
+        output: pullResult.stderr || pullResult.stdout || 'No output'
+      });
+    }
+    
+    // Switch back to the original branch
+    await runGitCommand(`git checkout ${currentBranch}`);
+    
+    // Determine overall success
+    const overallSuccess = results.every(r => r.success);
+    
+    res.json({ 
+      success: true,
+      overallSuccess,
+      results
+    });
+  } catch (error) {
+    console.error('Error updating all branches:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: `Failed to update all branches: ${error.message}`,
+      stdout: '',
+      stderr: error.message,
+      code: error.code || 1
+    });
   }
 });
 

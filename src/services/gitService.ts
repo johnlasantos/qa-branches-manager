@@ -74,7 +74,12 @@ export const switchBranch = async (branchName: string, apiBaseUrl: string = ''):
     method: 'POST',
     body: JSON.stringify({ branch: branchName }),
   });
-  return data.message;
+  
+  // Return stdout if successful, stderr if failed
+  if (!data.success && data.stderr) {
+    return data.stderr;
+  }
+  return data.stdout || data.message || '';
 };
 
 export const deleteBranch = async (branchName: string, apiBaseUrl: string = ''): Promise<string> => {
@@ -82,14 +87,24 @@ export const deleteBranch = async (branchName: string, apiBaseUrl: string = ''):
     method: 'POST',
     body: JSON.stringify({ branch: branchName }),
   });
-  return data.message;
+  
+  // Return stdout if successful, stderr if failed
+  if (!data.success && data.stderr) {
+    return data.stderr;
+  }
+  return data.stdout || data.message || '';
 };
 
 export const updateCurrentBranch = async (apiBaseUrl: string = ''): Promise<string> => {
   const data = await apiRequest('pull', apiBaseUrl, {
     method: 'POST'
   });
-  return data.message;
+  
+  // Return stdout if successful, stderr if failed
+  if (!data.success && data.stderr) {
+    return data.stderr;
+  }
+  return data.stdout || data.message || '';
 };
 
 export const updateAllBranches = async (apiBaseUrl: string = ''): Promise<{ overallSuccess: boolean, results: Array<{ branch: string, success: boolean, output: string }> }> => {
@@ -109,7 +124,11 @@ export const cleanupBranches = async (apiBaseUrl: string = ''): Promise<string> 
     console.warn('Cleanup warnings:', data.warnings);
   }
   
-  return data.message;
+  // Return stdout if successful, stderr if failed
+  if (!data.success && data.stderr) {
+    return data.stderr;
+  }
+  return data.message || data.stdout || '';
 };
 
 export const searchBranches = async (

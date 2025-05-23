@@ -110,6 +110,22 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
           </span>
         );
       }
+      // Highlight error messages
+      else if (line.includes('error:') || line.includes('fatal:')) {
+        return (
+          <span key={index} className="text-[#ea384c] block font-medium">
+            {line}
+          </span>
+        );
+      }
+      // Highlight "would be overwritten by merge" message
+      else if (line.includes('would be overwritten by merge')) {
+        return (
+          <span key={index} className="text-[#ea384c] block font-medium">
+            {line}
+          </span>
+        );
+      }
       // Return normal line
       return (
         <span key={index} className="block">
