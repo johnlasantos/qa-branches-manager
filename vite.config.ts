@@ -1,3 +1,4 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -30,16 +31,24 @@ export default defineConfig(({ mode }) => ({
     // Optimize chunks for better browser caching
     rollupOptions: {
       output: {
-        manualChunks: {
-          react: ['react', 'react-dom', 'react-router-dom'],
-          ui: [
-            '@radix-ui/react-separator', 
-            '@radix-ui/react-toast',
-            '@radix-ui/react-tooltip',
-            // Other UI components are split automatically
-          ],
-          tanstack: ['@tanstack/react-query'],
-        },
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') && !id.includes('@tanstack')) {
+              return 'react-vendor';
+            }
+            
+            if (id.includes('@radix-ui')) {
+              return 'ui-vendor';
+            }
+            
+            if (id.includes('@tanstack/react-query')) {
+              return 'tanstack-vendor';
+            }
+            
+            // All other node_modules go into the default vendor chunk
+            return 'vendor';
+          }
+        }
       },
     },
     // Minify output for production
