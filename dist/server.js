@@ -1,12 +1,21 @@
+
 const express = require('express');
 const cors = require('cors');
 const { exec } = require('child_process');
 const util = require('util');
 const fs = require('fs');
 const path = require('path');
+const NodeCache = require('node-cache');
 
 // Convert exec to Promise-based
 const execAsync = util.promisify(exec);
+
+// Create a cache with TTL of 5 minutes
+const gitCache = new NodeCache({ 
+  stdTTL: 300, // 5 minutes cache lifetime
+  checkperiod: 60, // Check for expired keys every 60 seconds
+  useClones: false // Store direct references for better memory performance
+});
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -50,31 +59,79 @@ if (!fs.existsSync(config.repositoryPath)) {
   console.error('Please update the config.json file with a valid path.');
 }
 
-// Helper function to execute git commands
-async function runGitCommand(command) {
+// Helper function to execute git commands with caching
+async function runGitCommand(command, cacheKey = null, cacheTTL = 300) {
   try {
+    // Check cache if a cache key is provided
+    if (cacheKey && gitCache.has(cacheKey)) {
+      return gitCache.get(cacheKey);
+    }
+    
     const { stdout, stderr } = await execAsync(command, { 
       cwd: config.repositoryPath,
       windowsHide: true
     });
     
-    // Always return both stdout and stderr even on success
-    return { 
+    const result = { 
       success: true, 
       stdout: stdout || '', 
       stderr: stderr || '', 
       code: 0 
     };
+    
+    // Store result in cache if cache key is provided
+    if (cacheKey) {
+      gitCache.set(cacheKey, result, cacheTTL);
+    }
+    
+    return result;
   } catch (error) {
     console.error(`Git command failed: ${command}`, error);
     
-    // Return both stdout and stderr along with the error code
-    return { 
+    const result = { 
       success: false, 
       stdout: error.stdout || '', 
       stderr: error.stderr || error.message || '', 
       code: error.code || 1 
     };
+    
+    return result;
+  }
+}
+
+// Clear specific cache entries
+function clearCache(pattern = null) {
+  if (pattern) {
+    const keys = gitCache.keys().filter(key => key.includes(pattern));
+    keys.forEach(key => gitCache.del(key));
+  } else {
+    gitCache.flushAll();
+  }
+}
+
+// Background repository update (runs every 15 minutes)
+let lastBackgroundUpdateTime = 0;
+const BACKGROUND_UPDATE_INTERVAL = 15 * 60 * 1000; // 15 minutes
+
+// Function to update repository data in the background
+async function updateRepositoryBackground() {
+  const now = Date.now();
+  
+  // Only run if the last update was more than BACKGROUND_UPDATE_INTERVAL ago
+  if (now - lastBackgroundUpdateTime > BACKGROUND_UPDATE_INTERVAL) {
+    lastBackgroundUpdateTime = now;
+    
+    try {
+      // Run a fetch to update refs without the quiet flag (which is not supported)
+      await runGitCommand('git remote update origin', null, 0);
+      console.log('Background repository update completed');
+      
+      // Clear relevant caches after update
+      clearCache('branches');
+      clearCache('remote');
+    } catch (error) {
+      console.error('Background repository update failed:', error);
+    }
   }
 }
 
@@ -119,42 +176,61 @@ app.get('/config', (req, res) => {
   }
 });
 
-// Get all local branches with pagination
+// Get all local branches with pagination - OPTIMIZED
 app.get('/branches', async (req, res) => {
   try {
     // Support pagination
     const page = parseInt(req.query.page) || 0;
     const limit = parseInt(req.query.limit) || 10;
+    const skipRefresh = req.query.skipRefresh === 'true';
     
-    // Make sure we have the latest info
-    await runGitCommand('git fetch --prune');
-    
-    const { stdout: output } = await runGitCommand('git branch -v');
-    const { stdout: remoteOutput } = await runGitCommand('git branch -r');
+    // Note: We've removed the cache check and will always execute Git commands
+    // to get the most up-to-date branch list
 
-    // Get all remote branches
-    const remoteBranches = remoteOutput
-      .split('\n')
-      .filter(Boolean)
-      .map(line => line.trim().replace('origin/', ''));
+    // Get current branch using faster git-rev-parse instead of git branch
+    const currentBranchPromise = runGitCommand('git rev-parse --abbrev-ref HEAD');
     
-    // Get all local branches
-    const allBranches = output
+    // Use for-each-ref which is much faster than git branch
+    const localBranchesPromise = runGitCommand('git for-each-ref --format="%(refname:short)" refs/heads/');
+    
+    // Get remote branches more efficiently
+    const remoteBranchesPromise = runGitCommand('git for-each-ref --format="%(refname:short)" refs/remotes/origin/');
+    
+    // Execute commands in parallel
+    const [currentBranchResult, localBranchesResult, remoteBranchesResult] = await Promise.all([
+      currentBranchPromise,
+      localBranchesPromise, 
+      remoteBranchesPromise
+    ]);
+    
+    const currentBranch = currentBranchResult.stdout.trim();
+    
+    // Parse local branches output
+    const allBranches = localBranchesResult.stdout
       .split('\n')
       .filter(Boolean)
-      .map(line => {
-        const isCurrent = line.startsWith('*');
-        const name = line.replace('*', '').trim().split(' ')[0];
-        const hasRemote = remoteBranches.some(rb => rb === name);
+      .map(name => {
+        name = name.trim();
+        const isCurrent = name === currentBranch;
         
-        // Use both "current" and "isCurrent" for compatibility
         return { 
           name, 
           current: isCurrent, 
-          isCurrent: isCurrent, 
-          hasRemote 
+          isCurrent: isCurrent,
+          hasRemote: false // Will set this below
         };
       });
+    
+    // Parse remote branches and mark local branches that have remotes
+    const remoteNames = remoteBranchesResult.stdout
+      .split('\n')
+      .filter(Boolean)
+      .map(name => name.trim().replace('origin/', ''));
+    
+    // Mark which local branches have remote tracking branches
+    allBranches.forEach(branch => {
+      branch.hasRemote = remoteNames.includes(branch.name);
+    });
     
     // Get total count for pagination info
     const total = allBranches.length;
@@ -162,8 +238,8 @@ app.get('/branches', async (req, res) => {
     // Paginate the results
     const paginatedBranches = allBranches.slice(page * limit, (page + 1) * limit);
     
-    // Return with pagination metadata
-    res.json({
+    // Create response object with pagination metadata
+    const response = {
       branches: paginatedBranches,
       pagination: {
         page,
@@ -171,28 +247,45 @@ app.get('/branches', async (req, res) => {
         total,
         hasMore: (page + 1) * limit < total
       }
-    });
+    };
+    
+    // Note: We've removed caching the result - always returning fresh data
+    
+    // Return response
+    res.json(response);
+    
+    // Trigger a background update for future requests
+    if (!skipRefresh) {
+      updateRepositoryBackground();
+    }
   } catch (error) {
     console.error('Error getting branches:', error);
     res.status(500).json({ success: false, message: 'Failed to get branches' });
   }
 });
 
-// Get all remote branches with pagination
+// Get all remote branches with pagination - OPTIMIZED
 app.get('/remote-branches', async (req, res) => {
   try {
     // Support pagination
     const page = parseInt(req.query.page) || 0;
     const limit = parseInt(req.query.limit) || 10;
+    const skipRefresh = req.query.skipRefresh === 'true';
+    const cacheKey = `remote_branches_${page}_${limit}`;
     
-    // Fetch to ensure we have the latest remote branches
-    await runGitCommand('git fetch --prune');
-    const { stdout } = await runGitCommand('git branch -r');
+    // Check if we already have cached data
+    if (!skipRefresh && gitCache.has(cacheKey)) {
+      return res.json(gitCache.get(cacheKey));
+    }
+    
+    // Use for-each-ref instead of branch -r (more efficient)
+    const { stdout } = await runGitCommand('git for-each-ref --format="%(refname:short)" refs/remotes/origin/');
     
     // Get all remote branches
     const allBranches = stdout
       .split('\n')
       .filter(Boolean)
+      .filter(line => !line.includes('origin/HEAD')) // Filter out HEAD pointer
       .map(line => {
         const name = line.trim().replace('origin/', '');
         return { name };
@@ -204,8 +297,8 @@ app.get('/remote-branches', async (req, res) => {
     // Paginate the results
     const paginatedBranches = allBranches.slice(page * limit, (page + 1) * limit);
     
-    // Return with pagination metadata
-    res.json({
+    // Create response with pagination metadata
+    const response = {
       branches: paginatedBranches,
       pagination: {
         page,
@@ -213,31 +306,47 @@ app.get('/remote-branches', async (req, res) => {
         total,
         hasMore: (page + 1) * limit < total
       }
-    });
+    };
+    
+    // Cache the result
+    gitCache.set(cacheKey, response, 120); // 2 minute cache
+    
+    // Return response
+    res.json(response);
+    
+    // Trigger a background update for future requests
+    if (!skipRefresh) {
+      updateRepositoryBackground();
+    }
   } catch (error) {
     console.error('Error getting remote branches:', error);
     res.status(500).json({ success: false, message: 'Failed to get remote branches' });
   }
 });
 
-// Search remote branches with pagination
+// Search remote branches with pagination - OPTIMIZED
 app.get('/remote-branches/search', async (req, res) => {
   try {
     const query = req.query.q || '';
     const page = parseInt(req.query.page) || 0;
     const limit = parseInt(req.query.limit) || 10;
+    const cacheKey = `search_${query}_${page}_${limit}`;
     
-    const { stdout } = await runGitCommand('git branch -r');
+    // Check if we already have cached data for this search
+    if (gitCache.has(cacheKey)) {
+      return res.json(gitCache.get(cacheKey));
+    }
     
-    // Filter branches by search query
+    // Get all remote branches and filter in JavaScript instead of using grep
+    const { stdout } = await runGitCommand('git for-each-ref --format="%(refname:short)" refs/remotes/origin/');
+    
+    // Filter branches by search query in JavaScript (more reliable than grep)
     const allMatchingBranches = stdout
       .split('\n')
       .filter(Boolean)
-      .map(line => {
-        const name = line.trim().replace('origin/', '');
-        return { name };
-      })
-      .filter(branch => branch.name.toLowerCase().includes(query.toLowerCase()));
+      .map(line => line.trim().replace('origin/', ''))
+      .filter(name => name.toLowerCase().includes(query.toLowerCase()))
+      .map(name => ({ name }));
     
     // Get total count for pagination info
     const total = allMatchingBranches.length;
@@ -245,8 +354,8 @@ app.get('/remote-branches/search', async (req, res) => {
     // Paginate the results
     const paginatedBranches = allMatchingBranches.slice(page * limit, (page + 1) * limit);
     
-    // Return with pagination metadata
-    res.json({
+    // Create response with pagination metadata
+    const response = {
       branches: paginatedBranches,
       pagination: {
         page,
@@ -254,14 +363,20 @@ app.get('/remote-branches/search', async (req, res) => {
         total,
         hasMore: (page + 1) * limit < total
       }
-    });
+    };
+    
+    // Cache the result for searches
+    gitCache.set(cacheKey, response, 60); // 1 minute cache
+    
+    // Return response
+    res.json(response);
   } catch (error) {
     console.error('Error searching branches:', error);
     res.status(500).json({ success: false, message: 'Failed to search branches' });
   }
 });
 
-// Switch branch - FIXED
+// Switch branch - OPTIMIZED with JavaScript-based branch detection
 app.post('/checkout', async (req, res) => {
   try {
     const { branch } = req.body;
@@ -273,35 +388,41 @@ app.post('/checkout', async (req, res) => {
       });
     }
     
-    // First check if the branch exists locally
-    const { stdout: localBranchOutput } = await runGitCommand('git branch');
+    // Clear cache for branches since the current branch is changing
+    clearCache('branches');
+    
+    // Get local branches using for-each-ref and detect using JavaScript
+    const { stdout: localBranchOutput } = await runGitCommand(
+      'git for-each-ref --format="%(refname:short)" refs/heads/'
+    );
+    
+    // Get remote branches using for-each-ref and detect using JavaScript
+    const { stdout: remoteBranchOutput } = await runGitCommand(
+      'git for-each-ref --format="%(refname:short)" refs/remotes/origin/'
+    );
+    
+    // Parse branch lists
     const localBranches = localBranchOutput
       .split('\n')
       .filter(Boolean)
-      .map(line => line.replace('*', '').trim());
+      .map(b => b.trim());
     
-    // Check if branch exists remotely
-    const { stdout: remoteBranchOutput } = await runGitCommand('git branch -r');
     const remoteBranches = remoteBranchOutput
       .split('\n')
       .filter(Boolean)
-      .map(line => line.trim())
-      .filter(line => line.startsWith('origin/'))
-      .map(line => line.replace('origin/', ''));
+      .map(b => b.trim());
     
-    console.log('Local branches:', localBranches);
-    console.log('Remote branches:', remoteBranches);
-    console.log('Requested branch:', branch);
+    // Check if branch exists locally or remotely using JavaScript includes()
+    const branchExistsLocally = localBranches.includes(branch);
+    const branchExistsRemotely = remoteBranches.includes(`origin/${branch}`);
     
     let result;
     
-    if (localBranches.includes(branch)) {
+    if (branchExistsLocally) {
       // Branch exists locally, just check it out
-      console.log('Checking out local branch:', branch);
       result = await runGitCommand(`git checkout ${branch}`);
-    } else if (remoteBranches.includes(branch)) {
+    } else if (branchExistsRemotely) {
       // Branch exists remotely but not locally, create from remote
-      console.log('Creating and checking out from remote branch:', branch);
       result = await runGitCommand(`git checkout -b ${branch} origin/${branch}`);
     } else {
       return res.status(404).json({ 
@@ -341,7 +462,7 @@ app.post('/checkout', async (req, res) => {
   }
 });
 
-// Delete branch
+// Delete branch - OPTIMIZED with JavaScript-based branch detection
 app.post('/delete-branch', async (req, res) => {
   try {
     const { branch } = req.body;
@@ -355,8 +476,11 @@ app.post('/delete-branch', async (req, res) => {
       });
     }
     
-    // Check if branch is current
-    const { stdout: currentBranchOutput } = await runGitCommand('git branch --show-current');
+    // Clear cache for branches since we're modifying the branch list
+    clearCache('branches');
+    
+    // Check if branch is current using faster rev-parse
+    const { stdout: currentBranchOutput } = await runGitCommand('git rev-parse --abbrev-ref HEAD');
     const currentBranch = currentBranchOutput.trim();
     
     if (currentBranch === branch) {
@@ -412,9 +536,12 @@ app.post('/delete-branch', async (req, res) => {
   }
 });
 
-// Pull current branch
+// Pull current branch - OPTIMIZED
 app.post('/pull', async (req, res) => {
   try {
+    // Clear cache for branches since we're updating the current branch
+    clearCache('branches');
+    
     const result = await runGitCommand('git pull');
     
     if (result.success) {
@@ -446,54 +573,42 @@ app.post('/pull', async (req, res) => {
   }
 });
 
-// Cleanup branches (prune stale branches) - FIXED
+// Cleanup branches (prune stale branches) - OPTIMIZED with JavaScript-based branch detection
 app.post('/cleanup', async (req, res) => {
   try {
-    // First, fetch from remote with prune to update our knowledge of remote branches
-    const fetchResult = await runGitCommand('git fetch --prune');
-    if (!fetchResult.success) {
-      console.error('Fetch failed during cleanup:', fetchResult.stderr);
-      return res.status(500).json({ 
-        success: false, 
-        message: `Fetch failed: ${fetchResult.stderr}`,
-        stdout: fetchResult.stdout,
-        stderr: fetchResult.stderr,
-        code: fetchResult.code
-      });
-    }
+    // Clear cache for branches since we're modifying the branch list
+    clearCache('branches');
     
-    // Get local branches
-    const { stdout: localOutput } = await runGitCommand('git branch');
+    // Get local branches using more efficient for-each-ref
+    const { stdout: localOutput } = await runGitCommand(
+      'git for-each-ref --format="%(refname:short) %(upstream)" refs/heads/'
+    );
+    
     const localBranches = localOutput
       .split('\n')
       .filter(Boolean)
       .map(line => {
-        const name = line.replace('*', '').trim();
-        const isCurrent = line.includes('*');
-        return { name, isCurrent };
+        const parts = line.trim().split(' ');
+        const name = parts[0];
+        const hasUpstream = parts.length > 1 && parts[1]; // If there's an upstream reference
+        
+        return { name, hasUpstream };
       });
     
-    // Get remote branches
-    const { stdout: remoteOutput } = await runGitCommand('git branch -r');
-    const remoteBranches = remoteOutput
-      .split('\n')
-      .filter(Boolean)
-      .map(line => line.trim().replace('origin/', ''));
+    // Get current branch to avoid deleting it
+    const { stdout: currentBranchOutput } = await runGitCommand('git rev-parse --abbrev-ref HEAD');
+    const currentBranch = currentBranchOutput.trim();
     
-    // Find branches that exist locally but not remotely
+    // Find branches that don't have upstream (remote tracking branches)
     const staleBranches = localBranches.filter(local => {
       // Skip current branch and protected branches
-      if (local.isCurrent || ['main', 'master', 'develop'].includes(local.name)) {
+      if (local.name === currentBranch || ['main', 'master', 'develop'].includes(local.name)) {
         return false;
       }
       
-      // Check if this local branch exists remotely
-      return !remoteBranches.includes(local.name);
+      // Consider branches without upstream as stale
+      return !local.hasUpstream;
     });
-    
-    console.log('Local branches:', localBranches.map(b => b.name));
-    console.log('Remote branches:', remoteBranches);
-    console.log('Deprecated branches to delete:', staleBranches.map(b => b.name));
     
     if (staleBranches.length === 0) {
       return res.json({ 
@@ -502,41 +617,37 @@ app.post('/cleanup', async (req, res) => {
       });
     }
     
-    // Delete each stale branch
-    const results = [];
-    const errors = [];
+    // Delete each stale branch - can be done in parallel for better performance
+    const deletePromises = staleBranches.map(branch => 
+      runGitCommand(`git branch -d ${branch.name}`)
+        .then(result => {
+          if (!result.success) {
+            return runGitCommand(`git branch -D ${branch.name}`);
+          }
+          return result;
+        })
+        .then(result => ({
+          branch: branch.name,
+          success: result.success,
+          output: result.stdout || result.stderr
+        }))
+    );
     
-    for (const branch of staleBranches) {
-      // Try normal delete first
-      let deleteResult = await runGitCommand(`git branch -d ${branch.name}`);
-      
-      // If that fails, try force delete
-      if (!deleteResult.success) {
-        console.log(`Normal delete failed for ${branch.name}, trying force delete`);
-        deleteResult = await runGitCommand(`git branch -D ${branch.name}`);
-      }
-      
-      if (deleteResult.success) {
-        results.push(`Deleted branch ${branch.name}`);
-      } else {
-        errors.push(`Failed to delete ${branch.name}: ${deleteResult.stderr}`);
-      }
-    }
+    const results = await Promise.all(deletePromises);
     
-    if (errors.length > 0) {
-      console.error('Errors during cleanup:', errors);
-    }
+    const successResults = results.filter(r => r.success);
+    const errorResults = results.filter(r => !r.success);
     
-    const message = results.length > 0 
-      ? `${results.join('\n')}\n${results.length} deprecated branches removed.`
+    const message = successResults.length > 0 
+      ? `${successResults.map(r => `Deleted branch ${r.branch}`).join('\n')}\n${successResults.length} deprecated branches removed.`
       : 'No branches were removed.';
     
     res.json({ 
       success: true, 
       message: message,
       stdout: message,
-      stderr: errors.length > 0 ? errors.join('\n') : '',
-      warnings: errors.length > 0 ? errors : undefined
+      stderr: errorResults.length > 0 ? errorResults.map(r => `Failed to delete ${r.branch}: ${r.output}`).join('\n') : '',
+      warnings: errorResults.length > 0 ? errorResults.map(r => `Failed to delete ${r.branch}: ${r.output}`) : undefined
     });
   } catch (error) {
     console.error('Error during cleanup:', error);
@@ -550,28 +661,29 @@ app.post('/cleanup', async (req, res) => {
   }
 });
 
-// Status endpoint (optional)
+// Status endpoint - OPTIMIZED with caching
 app.get('/status', async (req, res) => {
   try {
-    const result = await runGitCommand('git status');
+    const cacheKey = 'git_status';
     
-    if (result.success) {
-      res.json({ 
-        success: true, 
-        status: result.stdout,
-        stdout: result.stdout,
-        stderr: result.stderr 
-      });
-    } else {
-      console.error('Status command failed:', result.stderr);
-      res.status(500).json({ 
-        success: false, 
-        message: result.stderr,
-        stdout: result.stdout,
-        stderr: result.stderr,
-        code: result.code
-      });
+    // Check if status is cached (cache for 10 seconds only)
+    if (gitCache.has(cacheKey)) {
+      return res.json(gitCache.get(cacheKey));
     }
+    
+    const result = await runGitCommand('git status --porcelain');
+    
+    const response = { 
+      success: true, 
+      status: result.stdout,
+      stdout: result.stdout,
+      stderr: result.stderr 
+    };
+    
+    // Cache status for a short period (10 seconds)
+    gitCache.set(cacheKey, response, 10);
+    
+    res.json(response);
   } catch (error) {
     console.error('Error getting status:', error);
     res.status(500).json({ 
@@ -584,56 +696,55 @@ app.get('/status', async (req, res) => {
   }
 });
 
-// Add the update-all-branches endpoint
+// Update all branches endpoint - OPTIMIZED with sequential execution
 app.post('/update-all-branches', async (req, res) => {
   try {
-    // First, fetch from remote to get latest information
-    const fetchResult = await runGitCommand('git fetch --prune');
+    // Clear branch caches since we'll be updating branches
+    clearCache('branches');
     
-    // Get local branches
-    const { stdout: localBranchesOutput } = await runGitCommand('git branch');
+    // Get local branches using for-each-ref
+    const { stdout: localBranchesOutput } = await runGitCommand('git for-each-ref --format="%(refname:short)" refs/heads/');
     const localBranches = localBranchesOutput
       .split('\n')
       .filter(Boolean)
-      .map(line => {
-        const isCurrent = line.startsWith('*');
-        const name = line.replace('*', '').trim();
-        return { name, isCurrent };
-      });
+      .map(name => name.trim());
     
-    // Save current branch to return to it later
-    const currentBranch = localBranches.find(b => b.isCurrent)?.name || 'main';
+    // Get current branch
+    const { stdout: currentBranchOutput } = await runGitCommand('git rev-parse --abbrev-ref HEAD');
+    const currentBranch = currentBranchOutput.trim();
     
-    // Get remote branches
-    const { stdout: remoteBranchesOutput } = await runGitCommand('git branch -r');
+    // Get remote branches to see which local branches have remotes
+    const { stdout: remoteBranchesOutput } = await runGitCommand('git for-each-ref --format="%(refname:short)" refs/remotes/origin/');
     const remoteBranches = remoteBranchesOutput
       .split('\n')
       .filter(Boolean)
-      .map(line => line.trim().replace('origin/', ''));
+      .map(name => name.trim().replace('origin/', ''));
     
     // Find local branches that have matching remote branches
     const branchesToUpdate = localBranches.filter(localBranch => 
-      remoteBranches.includes(localBranch.name)
+      remoteBranches.includes(localBranch)
     );
     
-    // Update each branch
+    // IMPORTANT: Run updates SEQUENTIALLY using for await...of instead of Promise.all
+    // to avoid git lock conflicts
     const results = [];
+    
     for (const branch of branchesToUpdate) {
       // Checkout the branch
-      const checkoutResult = await runGitCommand(`git checkout ${branch.name}`);
+      const checkoutResult = await runGitCommand(`git checkout ${branch}`);
       if (!checkoutResult.success) {
         results.push({ 
-          branch: branch.name, 
+          branch, 
           success: false, 
           output: `Failed to checkout branch: ${checkoutResult.stderr || checkoutResult.stdout}` 
         });
-        continue;
+        continue; // Skip pull if checkout failed
       }
       
       // Pull the latest changes
-      const pullResult = await runGitCommand(`git pull origin ${branch.name}`);
+      const pullResult = await runGitCommand(`git pull origin ${branch}`);
       results.push({ 
-        branch: branch.name, 
+        branch, 
         success: pullResult.success, 
         output: pullResult.stderr || pullResult.stdout || 'No output'
       });
@@ -683,15 +794,7 @@ app.listen(PORT, () => {
   } else {
     console.log(`Git Branch Manager Server running on port ${PORT}`);
   }
+  
+  // Run initial background repository update without blocking server startup
+  setTimeout(updateRepositoryBackground, 5000);
 });
-
-// Warm up Git on server startup
-(async () => {
-  console.log("Warming up Git...");
-  const result = await runGitCommand("git status");
-  if (result.success) {
-    console.log("Git warm-up completed.");
-  } else {
-    console.warn("Git warm-up failed:", result.error);
-  }
-})();
