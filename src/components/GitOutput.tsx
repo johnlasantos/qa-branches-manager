@@ -317,11 +317,13 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
           <Copy className="h-4 w-4" />
         </Button>
       </div>
-      <ScrollArea className="flex-1 rounded-md">
-        <pre className="git-output text-sm p-4 whitespace-pre-wrap h-full">
-          {processOutput(output)}
-        </pre>
-      </ScrollArea>
+      <div className="border rounded-md h-80 min-h-80 max-h-80 overflow-hidden">
+        <ScrollArea className="h-full w-full">
+          <pre className="git-output text-sm p-4 whitespace-pre-wrap">
+            {processOutput(output)}
+          </pre>
+        </ScrollArea>
+      </div>
     </div>
   );
 };

@@ -40,6 +40,7 @@ interface BranchListProps {
   className?: string;
   isLoading?: boolean;
   isUpdatingCurrentBranch?: boolean;
+  isUpdatingAllBranches?: boolean;
   onReloadLocalBranches?: () => void;
 }
 
@@ -53,6 +54,7 @@ const BranchList: React.FC<BranchListProps> = ({
   className,
   isLoading = false,
   isUpdatingCurrentBranch = false,
+  isUpdatingAllBranches = false,
   onReloadLocalBranches
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,14 +66,17 @@ const BranchList: React.FC<BranchListProps> = ({
   const loadingRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
 
+  // Determine if any action buttons should be disabled
+  const areActionsDisabled = isLoading || isUpdatingCurrentBranch || isUpdatingAllBranches;
+
   useEffect(() => {
-    if (isLoading || isUpdatingCurrentBranch) {
+    if (areActionsDisabled) {
       setOpenTooltips({});
     }
-  }, [isLoading, isUpdatingCurrentBranch]);
+  }, [areActionsDisabled]);
 
   const handleTooltipOpenChange = (open: boolean, tooltipId: string) => {
-    if (isLoading || isUpdatingCurrentBranch) return;
+    if (areActionsDisabled) return;
     
     setOpenTooltips(prev => ({
       ...prev,
@@ -228,8 +233,9 @@ const BranchList: React.FC<BranchListProps> = ({
                                     }}
                                     variant="secondary"
                                     className="flex items-center bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
+                                    disabled={areActionsDisabled}
                                   >
-                                    <RefreshCcw size={16} className={isUpdatingCurrentBranch ? "animate-spin" : ""} />
+                                    <RefreshCcw size={16} className={isUpdatingCurrentBranch || isUpdatingAllBranches ? "animate-spin" : ""} />
                                   </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
@@ -299,6 +305,7 @@ const BranchList: React.FC<BranchListProps> = ({
                                       }));
                                     }}
                                     className="flex items-center bg-red-50 hover:bg-red-100 border-red-200 text-red-600"
+                                    disabled={areActionsDisabled}
                                   >
                                     <Trash2 size={16} />
                                   </Button>
@@ -367,6 +374,7 @@ const BranchList: React.FC<BranchListProps> = ({
                                       }));
                                     }}
                                     className="flex items-center bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+                                    disabled={areActionsDisabled}
                                   >
                                     <ArrowLeftRight size={16} />
                                   </Button>
