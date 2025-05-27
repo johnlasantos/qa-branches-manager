@@ -90,7 +90,11 @@ const GitBranchManager: React.FC = () => {
               {hasLocalBranches && (
                 <div className="flex items-center">
                   <Suspense fallback={<div className="w-16 h-8 bg-gray-100 animate-pulse rounded" />}>
-                    <BranchCleanupButton onCleanup={handleCleanupBranches} isLoading={isLoading} />
+                    <BranchCleanupButton 
+                      onCleanup={handleCleanupBranches} 
+                      isLoading={isLoading}
+                      isUpdatingAllBranches={isUpdatingAllBranches}
+                    />
                   </Suspense>
                   <Suspense fallback={<div className="w-16 h-8 ml-2 bg-gray-100 animate-pulse rounded" />}>
                     <UpdateAllBranchesButton 

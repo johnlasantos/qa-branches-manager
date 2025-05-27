@@ -23,11 +23,13 @@ import {
 interface BranchCleanupButtonProps {
   onCleanup: () => void;
   isLoading: boolean;
+  isUpdatingAllBranches?: boolean;
 }
 
 const BranchCleanupButton = React.forwardRef<HTMLDivElement, BranchCleanupButtonProps>(
-  ({ onCleanup, isLoading }, ref) => {
+  ({ onCleanup, isLoading, isUpdatingAllBranches = false }, ref) => {
     const [open, setOpen] = React.useState(false);
+    const isDisabled = isLoading || isUpdatingAllBranches;
 
     return (
       <TooltipProvider>
@@ -39,7 +41,7 @@ const BranchCleanupButton = React.forwardRef<HTMLDivElement, BranchCleanupButton
                   <Button 
                     variant="outline" 
                     size="sm"
-                    disabled={isLoading}
+                    disabled={isDisabled}
                     className="flex items-center text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive/90"
                   >
                     <Trash2 size={16} className="mr-2" />
