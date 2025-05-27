@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,13 +12,58 @@ interface GitOutputProps {
 
 const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
   const handleCopy = () => {
-    navigator.clipboard.writeText(output)
-      .then(() => {
-        toast.success('Output copied to clipboard');
-      })
-      .catch(() => {
-        toast.error('Failed to copy output');
+    // Try to use the modern clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(output)
+        .then(() => {
+          toast.success('Output copied to clipboard');
+        })
+        .catch(() => {
+          // Fallback: select the text and show instructions
+          fallbackCopyMethod();
+        });
+    } else {
+      // Fallback for environments without clipboard API
+      fallbackCopyMethod();
+    }
+  };
+
+  const fallbackCopyMethod = () => {
+    try {
+      const outputElement = document.getElementById('git-output');
+      if (outputElement) {
+        // Create a temporary text area with the content
+        const textArea = document.createElement('textarea');
+        textArea.value = output;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+          // Try the old execCommand method
+          const successful = document.execCommand('copy');
+          if (successful) {
+            toast.success('Output copied to clipboard');
+          } else {
+            throw new Error('execCommand failed');
+          }
+        } catch (err) {
+          // If all else fails, show instruction toast
+          toast.info('Press Ctrl+C to copy the command', {
+            duration: 5000,
+          });
+        }
+        
+        document.body.removeChild(textArea);
+      }
+    } catch (error) {
+      toast.info('Press Ctrl+C to copy the command', {
+        duration: 5000,
       });
+    }
   };
 
   // Process the output to apply color highlighting
@@ -319,7 +363,7 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
       </div>
       <div className="border rounded-md h-80 min-h-80 max-h-80 overflow-hidden">
         <ScrollArea className="h-full w-full">
-          <pre className="git-output text-sm p-4 whitespace-pre-wrap">
+          <pre id="git-output" className="git-output text-sm p-4 whitespace-pre-wrap">
             {processOutput(output)}
           </pre>
         </ScrollArea>
