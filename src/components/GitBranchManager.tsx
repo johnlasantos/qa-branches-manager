@@ -110,6 +110,7 @@ const GitBranchManager: React.FC = () => {
                 onUpdateCurrentBranch={updateCurrentBranchWithTracking}
                 isLoading={isLoading}
                 isUpdatingCurrentBranch={isUpdatingCurrentBranch}
+                isUpdatingAllBranches={isUpdatingAllBranches}
                 onScrollEnd={fetchMoreLocalBranches}
                 hasMore={localBranchesHasMore}
                 className="flex-1 overflow-hidden"

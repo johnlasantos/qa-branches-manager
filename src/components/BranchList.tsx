@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AlertTriangle, ArrowLeftRight, Trash2, Search, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -168,6 +169,7 @@ const BranchList: React.FC<BranchListProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-input"
+              disabled={areActionsDisabled}
             />
           </div>
         </div>
@@ -182,7 +184,9 @@ const BranchList: React.FC<BranchListProps> = ({
                 "branch-item p-3 rounded-md border", 
                 branch.isCurrent 
                   ? "border-green-300 bg-green-50 hover:bg-green-50"
-                  : "border-gray-200 hover:bg-gray-50"
+                  : "border-gray-200",
+                !areActionsDisabled && !branch.isCurrent && "hover:bg-gray-50",
+                areActionsDisabled && "opacity-75"
               )}
             >
               <div className="flex items-center justify-between">
@@ -212,6 +216,7 @@ const BranchList: React.FC<BranchListProps> = ({
                               <AlertDialog 
                                 open={showUpdateDialog} 
                                 onOpenChange={(isOpen) => {
+                                  if (areActionsDisabled) return;
                                   setShowUpdateDialog(isOpen);
                                   if (!isOpen) {
                                     setOpenTooltips(prev => ({ 
@@ -225,6 +230,7 @@ const BranchList: React.FC<BranchListProps> = ({
                                   <Button 
                                     size="sm" 
                                     onClick={() => {
+                                      if (areActionsDisabled) return;
                                       setShowUpdateDialog(true);
                                       setOpenTooltips(prev => ({ 
                                         ...prev, 
@@ -287,6 +293,7 @@ const BranchList: React.FC<BranchListProps> = ({
                           <TooltipTrigger asChild>
                             <span>
                               <AlertDialog onOpenChange={(isOpen) => {
+                                if (areActionsDisabled) return;
                                 if (!isOpen) {
                                   setOpenTooltips(prev => ({
                                     ...prev,
@@ -299,6 +306,7 @@ const BranchList: React.FC<BranchListProps> = ({
                                     variant="secondary" 
                                     size="sm"
                                     onClick={() => {
+                                      if (areActionsDisabled) return;
                                       setOpenTooltips(prev => ({
                                         ...prev,
                                         [`delete-${branch.name}`]: false
@@ -353,6 +361,7 @@ const BranchList: React.FC<BranchListProps> = ({
                               <AlertDialog 
                                 open={switchDialogBranch === branch.name} 
                                 onOpenChange={(isOpen) => {
+                                  if (areActionsDisabled) return;
                                   setSwitchDialogBranch(isOpen ? branch.name : null);
                                   if (!isOpen) {
                                     setOpenTooltips(prev => ({
@@ -367,6 +376,7 @@ const BranchList: React.FC<BranchListProps> = ({
                                     variant="secondary" 
                                     size="sm" 
                                     onClick={() => {
+                                      if (areActionsDisabled) return;
                                       setSwitchDialogBranch(branch.name);
                                       setOpenTooltips(prev => ({
                                         ...prev,
