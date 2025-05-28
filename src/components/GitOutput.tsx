@@ -1,6 +1,6 @@
+
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Copy } from 'lucide-react';
 import { toast } from 'sonner';
@@ -361,12 +361,12 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
           <Copy className="h-4 w-4" />
         </Button>
       </div>
-      <div className="rounded-md h-80 min-h-80 max-h-80 overflow-hidden">
-        <ScrollArea className="h-full w-full">
-          <pre id="git-output" className="git-output text-sm p-4 whitespace-pre-wrap">
+      <div className="border rounded-md h-80 min-h-80 max-h-80 overflow-hidden">
+        <div className="h-full w-full overflow-auto">
+          <pre id="git-output" className="git-output text-sm p-4 whitespace-pre-wrap min-h-full">
             {processOutput(output)}
           </pre>
-        </ScrollArea>
+        </div>
       </div>
     </div>
   );
