@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Branch } from '@/components/BranchList';
@@ -207,10 +206,8 @@ export const useGitOperations = () => {
         });
       }
       
-      // Refresh local branches in the background without blocking UI
-      setTimeout(() => {
-        fetchLocalBranches(true);
-      }, 100);
+      // Always refresh local branches after update operation, regardless of deprecated branches
+      fetchLocalBranches(true);
     } catch (error) {
       // Important: Set loading to false immediately in case of error
       setIsLoading(false);
@@ -223,6 +220,9 @@ export const useGitOperations = () => {
       toast.error('Failed to update branch', {
         description: 'See output panel for details.',
       });
+      
+      // Always refresh local branches even after error
+      fetchLocalBranches(true);
     }
   };
 
@@ -262,10 +262,8 @@ export const useGitOperations = () => {
         });
       }
       
-      // Refresh local branches in the background without blocking UI
-      setTimeout(() => {
-        fetchLocalBranches(true);
-      }, 100);
+      // Always refresh local branches after batch update operation
+      fetchLocalBranches(true);
     } catch (error) {
       // Important: Set loading to false immediately in case of error
       setIsUpdatingAllBranches(false);
@@ -276,6 +274,9 @@ export const useGitOperations = () => {
       }
       
       toast.error('Failed to update branches');
+      
+      // Always refresh local branches even after error
+      fetchLocalBranches(true);
     }
   };
 
