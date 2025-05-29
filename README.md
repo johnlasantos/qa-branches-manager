@@ -1,3 +1,4 @@
+
 # Git Branch Manager
 
 ![Git Branch Manager](https://img.shields.io/badge/Branch-Manager-blue)
@@ -16,6 +17,8 @@ Manage your Git branches easily through a simple and clean web interface.
 - Delete local branches
 - Clean up old or deprecated branches
 - Pull the latest changes from remote
+- Sync with remote repository
+- Track developer commits and activity
 
 ---
 
@@ -100,6 +103,118 @@ Edit `dist/config.json`:
 - `headerLink`: Link for branding
 - `basePath`: Base URL path
 - `apiBaseUrl`: API URL
+
+---
+
+## 🔌 API Endpoints
+
+### Branch Management
+
+| Endpoint | Method | Description |
+|:---------|:------|:------------|
+| `/config` | GET | Get configuration |
+| `/branches` | GET | List local branches (paginated) |
+| `/remote-branches` | GET | List remote branches (paginated) |
+| `/remote-branches/search` | GET | Search remote branches |
+| `/checkout` | POST | Switch to branch |
+| `/delete-branch` | POST | Delete a branch |
+| `/pull` | POST | Pull latest changes |
+| `/cleanup` | POST | Clean stale branches |
+| `/status` | GET | Get repo status |
+| `/update-all-branches` | POST | Update all local branches |
+
+### Repository Sync
+
+#### POST `/sync`
+
+Synchronizes the repository with the remote by running `git fetch --prune`.
+
+**Request:**
+```bash
+curl -X POST http://localhost:3001/sync
+```
+
+**Success Response:**
+```json
+{
+  "success": "Repository synchronized successfully.",
+  "stdout": "From origin\n * [new branch] feature-x -> origin/feature-x",
+  "stderr": ""
+}
+```
+
+**Error Response:**
+```json
+{
+  "error": "Failed to sync with remote repository.",
+  "details": "fatal: unable to connect to remote"
+}
+```
+
+### Developer Commits
+
+#### POST `/commits`
+
+Retrieves recent commits for a developer by email, including grouped emails for the same developer.
+
+**Request Parameters:**
+- `email` (string, required): Developer's email address
+
+**Request:**
+```bash
+curl -X POST http://localhost:3001/commits \
+  -H "Content-Type: application/json" \
+  -d '{"email": "developer@example.com"}'
+```
+
+**Success Response:**
+```json
+{
+  "last_commit": "2023-12-15 14:30:25",
+  "previous_commit": "2023-12-14 09:15:10",
+  "days_since_last_commit": 2,
+  "days_between_commits": 1,
+  "commits": [
+    {
+      "hash": "a1b2c3d4",
+      "author": "John Developer",
+      "email": "developer@example.com",
+      "date": "2023-12-15 14:30:25",
+      "message": "Fix authentication bug"
+    },
+    {
+      "hash": "e5f6g7h8",
+      "author": "John Developer", 
+      "email": "developer@example.com",
+      "date": "2023-12-14 09:15:10",
+      "message": "Add user validation"
+    }
+  ]
+}
+```
+
+**Error Response:**
+```json
+{
+  "error": "No commits found for this user."
+}
+```
+
+**Invalid Email Response:**
+```json
+{
+  "error": "Invalid or missing \"email\" parameter."
+}
+```
+
+### Pagination
+
+Use `page` and `limit` query parameters for branch endpoints:
+
+```bash
+GET /branches?page=0&limit=20
+GET /remote-branches?page=1&limit=10
+```
 
 ---
 
