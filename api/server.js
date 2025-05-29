@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const { exec } = require('child_process');
@@ -57,6 +56,37 @@ try {
 if (!fs.existsSync(config.repositoryPath)) {
   console.error(`Repository path not found: ${config.repositoryPath}`);
   console.error('Please update the config.json file with a valid path.');
+}
+
+// Developer groups for commit filtering
+const devGroups = [
+  ['yuri@netmake.com.br', 'yuri@netmake.com.br'],
+  ['caio@netmake.com.br', 'caio@scriptcase.com.br'],
+  ['eloy@netmake.com.br', 'eloy@scriptcase.com.br'],
+  ['israel@netmake.com.br', 'israel@scriptcase.com.br'],
+  ['marcia@netmake.com.br', 'marcia@scriptcase.com.br'],
+  ['servers@netmake.com.br', 'servers@scriptcase.com.br'],
+  ['r.carlos@netmake.com.br', 'r.carlos@scriptcase.com.br'],
+  ['m.cardoso@netmake.com.br', 'm.cardoso@scriptcase.com.br'],
+  ['jefferson@netmake.com.br', 'jefferson@scriptcase.com.br'],
+  ['rumosem.14', 'diogo@netmake.com.br', 'diogo@scriptcase.com.br'],
+  ['vmunizm@gmail.com', 'vinicius@netmake.com.br', 'vinicius@scriptcase.com.br'],
+  ['alvaro@netmake.com.br', 'a.moura@netmake.com.br', 'a.moura@scriptcase.com.br'],
+  ['roman@netmake.com.br', 'romanlh@netmake.com.br', 'roman@scriptcase.com.br', 'romanlh@scriptcase.com.br'],
+  ['sergio@netmake.com.br', 'galindo@netmake.com.br', 'sergio@scriptcase.com.br', 'galindo@scriptcase.com.br'],
+  ['j.lennon', 'john@netmake.com.br', 'johnlasantos@gmail.com', 'j.lennon@netmake.com.br', 'j.lennon@netmake.com.br', 'j.netmake@netmake.com.br', 'j.lennon@scriptcase.com.br'],
+  ['h.barros@netmake.com.br', 'henrique@netmake.com.br', 'barros.henrique@gmail.com', 'henrique@scriptcase.com.br', 'h.barros@scriptcase.com.br', 'barros.henrique.c@gmail.com'],
+  ['ronyan@netmake.com.br', 'r.alves@netmake.com.br', 'ronyan@scriptcase.com.br', 'r.alves@scriptcase.com.br', 'root@macbook-air-de-ronyan.local', 'ronyan@macbook-air-de-ronyan.local'],
+];
+
+// Helper function to find developer group by email
+function findGroupByEmail(email, groups) {
+  for (const group of groups) {
+    if (group.includes(email)) {
+      return group;
+    }
+  }
+  return [email];
 }
 
 // Helper function to execute git commands with caching
@@ -173,6 +203,124 @@ app.get('/config', (req, res) => {
   } catch (error) {
     console.error('Error getting config:', error);
     res.status(500).json({ success: false, message: 'Failed to get configuration' });
+  }
+});
+
+// Sync endpoint - equivalent to the PHP sync functionality
+app.post('/sync', async (req, res) => {
+  try {
+    const result = await runGitCommand('git fetch --prune');
+    
+    if (result.success) {
+      // Clear caches after successful sync
+      clearCache();
+      res.json({ 
+        success: true,
+        message: 'Repository synchronized successfully.',
+        stdout: result.stdout,
+        stderr: result.stderr
+      });
+    } else {
+      res.status(500).json({ 
+        success: false,
+        message: 'Failed to sync with remote repository.',
+        details: result.stderr || 'Unknown error',
+        stdout: result.stdout,
+        stderr: result.stderr
+      });
+    }
+  } catch (error) {
+    console.error('Error during sync:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: `Failed to sync: ${error.message}`,
+      stdout: '',
+      stderr: error.message
+    });
+  }
+});
+
+// Commits endpoint - equivalent to the PHP commit functionality
+app.post('/commits', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid or missing "email" parameter.' 
+      });
+    }
+    
+    const normalizedEmail = email.trim().toLowerCase();
+    const emails = findGroupByEmail(normalizedEmail, devGroups);
+    
+    const allCommits = [];
+    
+    // Get commits for each email in the group
+    for (const devEmail of emails) {
+      const gitCommand = `git log --remotes -n 2 --pretty="format:%H|%an|%ae|%ad|%s" --date=iso --author="${devEmail}"`;
+      const result = await runGitCommand(gitCommand);
+      
+      if (result.success && result.stdout.trim() !== '') {
+        const lines = result.stdout.trim().split('\n');
+        
+        for (const line of lines) {
+          if ((line.match(/\|/g) || []).length < 4) {
+            continue;
+          }
+          
+          const [hash, authorName, authorEmail, date, message] = line.split('|', 5);
+          
+          allCommits.push({
+            hash,
+            author: authorName,
+            email: authorEmail,
+            date,
+            message,
+          });
+        }
+      }
+    }
+    
+    // Sort commits by date (newest first)
+    allCommits.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    if (allCommits.length === 0) {
+      return res.json({ 
+        success: false,
+        message: 'No commits found for this user.',
+        commits: []
+      });
+    }
+    
+    const today = new Date().toISOString().split('T')[0];
+    const lastCommitDate = new Date(allCommits[0].date);
+    const prevCommitDate = allCommits[1] ? new Date(allCommits[1].date) : null;
+    
+    const lastDay = lastCommitDate.toISOString().split('T')[0];
+    const prevDay = prevCommitDate ? prevCommitDate.toISOString().split('T')[0] : null;
+    
+    const daysSinceLast = Math.floor((new Date(today) - new Date(lastDay)) / (1000 * 60 * 60 * 24));
+    const daysBetweenCommits = prevDay ? Math.floor((new Date(lastDay) - new Date(prevDay)) / (1000 * 60 * 60 * 24)) : null;
+    
+    const response = {
+      success: true,
+      last_commit: lastCommitDate.toISOString().replace('T', ' ').split('.')[0],
+      previous_commit: prevCommitDate ? prevCommitDate.toISOString().replace('T', ' ').split('.')[0] : null,
+      days_since_last_commit: daysSinceLast,
+      days_between_commits: daysBetweenCommits,
+      commits: allCommits.slice(0, 2),
+    };
+    
+    res.json(response);
+  } catch (error) {
+    console.error('Error getting commits:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: `Failed to get commits: ${error.message}`,
+      commits: []
+    });
   }
 });
 
@@ -721,8 +869,8 @@ app.post('/update-all-branches', async (req, res) => {
       .map(name => name.trim().replace('origin/', ''));
     
     // Find local branches that have matching remote branches
-    const branchesToUpdate = localBranches.filter(localBranch => 
-      remoteBranches.includes(localBranch)
+    const branchesToUpdate = localBranches.filter(local => 
+      remoteBranches.includes(local)
     );
     
     // IMPORTANT: Run updates SEQUENTIALLY using for await...of instead of Promise.all

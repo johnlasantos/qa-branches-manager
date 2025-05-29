@@ -1,4 +1,3 @@
-
 // This service connects to the Git backend API
 import { Branch } from "@/components/BranchList";
 import { RemoteBranch } from "@/components/BranchSearch";
@@ -6,9 +5,16 @@ import { RemoteBranch } from "@/components/BranchSearch";
 // Helper function for API requests
 const apiRequest = async (endpoint: string, apiBaseUrl: string = '', options?: RequestInit) => {
   try {
-    // Use the apiBaseUrl directly as provided, just ensure no double slashes
-    const baseUrl = apiBaseUrl ? apiBaseUrl.replace(/\/$/, '') : '';
-    const url = `${baseUrl}/${endpoint}`;
+    // Construct the URL properly
+    let url;
+    if (apiBaseUrl && apiBaseUrl !== '') {
+      // Use the full apiBaseUrl if provided
+      const baseUrl = apiBaseUrl.replace(/\/$/, '');
+      url = `${baseUrl}/${endpoint}`;
+    } else {
+      // Use relative URL for development proxy
+      url = `/${endpoint}`;
+    }
     
     const response = await fetch(url, {
       ...options,
@@ -57,9 +63,43 @@ export interface BranchUpdateResult {
   }>;
 }
 
+export interface CommitData {
+  success: boolean;
+  last_commit?: string;
+  previous_commit?: string;
+  days_since_last_commit?: number;
+  days_between_commits?: number;
+  commits: Array<{
+    hash: string;
+    author: string;
+    email: string;
+    date: string;
+    message: string;
+  }>;
+  message?: string;
+}
+
 export const getConfig = async (apiBaseUrl: string = ''): Promise<Config> => {
   const data = await apiRequest('config', apiBaseUrl);
   return data;
+};
+
+export const syncRepository = async (apiBaseUrl: string = ''): Promise<string> => {
+  const data = await apiRequest('sync', apiBaseUrl, {
+    method: 'POST',
+  });
+  
+  if (!data.success && data.stderr) {
+    return data.stderr;
+  }
+  return data.stdout || data.message || '';
+};
+
+export const getCommitsByEmail = async (email: string, apiBaseUrl: string = ''): Promise<CommitData> => {
+  return await apiRequest('commits', apiBaseUrl, {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
 };
 
 export const getLocalBranches = async (
