@@ -8,52 +8,18 @@ import { visualizer } from 'rollup-plugin-visualizer';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: mode === 'development' ? '/' : '/console/',
+  base: './',
   server: {
     host: "::",
     port: 8080,
     proxy: {
       // Proxy API requests to backend during development
-      '/config': {
+      // The proxy will only be used if apiBaseUrl is not set in config.json
+      '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
-      },
-      '/branches': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-      '/remote-branches': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-      '/pull': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-      '/checkout': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-      '/delete-branch': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-      '/cleanup': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-      '/status': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-      '/sync': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-      '/commits': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
     }
   },
   build: {

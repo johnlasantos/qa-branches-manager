@@ -37,12 +37,19 @@ try {
   );
   console.log('✅ nssm.exe copied to dist folder');
 
-  // 4. Copy config.json to dist
-  fs.copyFileSync(
-    path.resolve(apiDir, 'config.json'),
-    path.resolve(distDir, 'config.json')
+  // 4. Generate config.json with predefined content
+  const configContent = {
+    repositoryPath: ".",
+    headerLink: "https://project.domain.com/",
+    basePath: "/",
+    apiBaseUrl: "https://api.domain.com/"
+  };
+  
+  fs.writeFileSync(
+    path.resolve(distDir, 'config.json'),
+    JSON.stringify(configContent, null, 2)
   );
-  console.log('✅ config.json copied to dist folder');
+  console.log('✅ config.json generated in dist folder');
 
   // 5. Create a package.json in the dist folder for backend dependencies
   const apiPackageJSON = require(path.resolve(apiDir, 'package.json'));
@@ -71,7 +78,7 @@ try {
   );
   console.log('✅ README.md copied to dist folder');
 
-  // 7. Create index.html for redirection to manager subdirectory
+  // 7. Create index.html for redirection using basePath from config.json
   const indexHtmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -95,7 +102,6 @@ try {
   console.log('1. Navigate to the dist directory: cd dist');
   console.log('2. Install dependencies: npm install');
   console.log('3. Start the server: npm start or node server.js');
-  console.log('4. The app will be available at the configured base path (default: /console/)');
 } catch (error) {
   console.error('❌ Build process failed:', error);
   process.exit(1);
