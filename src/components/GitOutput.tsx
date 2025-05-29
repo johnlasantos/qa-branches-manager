@@ -138,6 +138,14 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
           </span>
         );
       }
+      // Highlight "Updating " message
+      else if (line.includes('Updating ')) {
+        return (
+          <span key={index} className="text-[#7ce77c] block font-medium">
+            {line}
+          </span>
+        );
+      }
       // Standard +/- lines (beginning with + or -)
       else if (line.startsWith('-') || line.includes('-----')) {
         return (
@@ -156,6 +164,14 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
       }
       // Highlight "Deleted branch" message
       else if (line.includes('Deleted branch')) {
+        return (
+          <span key={index} className="text-[#ea384c] block font-medium">
+            {line}
+          </span>
+        );
+      }
+      // Highlight "Your branch is behind" message
+      else if (line.includes('Your branch is behind')) {
         return (
           <span key={index} className="text-[#ea384c] block font-medium">
             {line}
@@ -190,6 +206,14 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
       else if (line.includes('M	')) {
         return (
           <span key={index} className="text-[#FEF7CD] block font-medium">
+            {line}
+          </span>
+        );
+      }
+      // Highlight "use 'git pull'" message
+      else if (line.includes('use "git pull"')) {
+        return (
+          <span key={index} className="text-[#1e1e1e] block font-medium">
             {line}
           </span>
         );

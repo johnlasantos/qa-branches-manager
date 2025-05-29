@@ -70,7 +70,15 @@ try {
   );
   console.log('✅ package.json created in dist folder');
 
-  // 6. Create index.html for redirection using basePath from config.json
+  // 6. Copy README.md to dist
+  console.log('📋 Copying README file...');
+  fs.copyFileSync(
+    path.resolve(apiDir, 'README.md'),
+    path.resolve(distDir, 'README.md')
+  );
+  console.log('✅ README.md copied to dist folder');
+
+  // 7. Create index.html for redirection using basePath from config.json
   const indexHtmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
