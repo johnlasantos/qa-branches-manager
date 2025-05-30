@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const { exec } = require('child_process');
@@ -57,6 +56,37 @@ try {
 if (!fs.existsSync(config.repositoryPath)) {
   console.error(`Repository path not found: ${config.repositoryPath}`);
   console.error('Please update the config.json file with a valid path.');
+}
+
+// Developer groups for commit filtering
+const devGroups = [
+  ['yuri@netmake.com.br', 'yuri@netmake.com.br'],
+  ['caio@netmake.com.br', 'caio@scriptcase.com.br'],
+  ['eloy@netmake.com.br', 'eloy@scriptcase.com.br'],
+  ['israel@netmake.com.br', 'israel@scriptcase.com.br'],
+  ['marcia@netmake.com.br', 'marcia@scriptcase.com.br'],
+  ['servers@netmake.com.br', 'servers@scriptcase.com.br'],
+  ['r.carlos@netmake.com.br', 'r.carlos@scriptcase.com.br'],
+  ['m.cardoso@netmake.com.br', 'm.cardoso@scriptcase.com.br'],
+  ['jefferson@netmake.com.br', 'jefferson@scriptcase.com.br'],
+  ['rumosem.14', 'diogo@netmake.com.br', 'diogo@scriptcase.com.br'],
+  ['vmunizm@gmail.com', 'vinicius@netmake.com.br', 'vinicius@scriptcase.com.br'],
+  ['alvaro@netmake.com.br', 'a.moura@netmake.com.br', 'a.moura@scriptcase.com.br'],
+  ['roman@netmake.com.br', 'romanlh@netmake.com.br', 'roman@scriptcase.com.br', 'romanlh@scriptcase.com.br'],
+  ['sergio@netmake.com.br', 'galindo@netmake.com.br', 'sergio@scriptcase.com.br', 'galindo@scriptcase.com.br'],
+  ['j.lennon', 'john@netmake.com.br', 'johnlasantos@gmail.com', 'j.lennon@netmake.com.br', 'j.lennon@netmake.com.br', 'j.netmake@netmake.com.br', 'j.lennon@scriptcase.com.br'],
+  ['h.barros@netmake.com.br', 'henrique@netmake.com.br', 'barros.henrique@gmail.com', 'henrique@scriptcase.com.br', 'h.barros@scriptcase.com.br', 'barros.henrique.c@gmail.com'],
+  ['ronyan@netmake.com.br', 'r.alves@netmake.com.br', 'ronyan@scriptcase.com.br', 'r.alves@scriptcase.com.br', 'root@macbook-air-de-ronyan.local', 'ronyan@macbook-air-de-ronyan.local']
+];
+
+// Helper function to find developer group by email
+function findGroupByEmail(email, groups) {
+  for (const group of groups) {
+    if (group.includes(email)) {
+      return group;
+    }
+  }
+  return [email];
 }
 
 // Helper function to execute git commands with caching
@@ -173,6 +203,156 @@ app.get('/config', (req, res) => {
   } catch (error) {
     console.error('Error getting config:', error);
     res.status(500).json({ success: false, message: 'Failed to get configuration' });
+  }
+});
+
+// NEW: Sync endpoint - runs git fetch --prune
+app.post('/sync', async (req, res) => {
+  try {
+    const result = await runGitCommand('git fetch --prune');
+    
+    if (result.success) {
+      // Clear relevant caches after sync
+      clearCache('branches');
+      clearCache('remote');
+      
+      res.json({ 
+        success: 'Repository synchronized successfully.',
+        stdout: result.stdout,
+        stderr: result.stderr
+      });
+    } else {
+      console.error('Sync failed:', result.stderr);
+      res.status(500).json({ 
+        error: 'Failed to sync with remote repository.',
+        details: result.stderr || 'Unknown error'
+      });
+    }
+  } catch (error) {
+    console.error('Error during sync:', error);
+    res.status(500).json({ 
+      error: 'Failed to sync with remote repository.',
+      details: error.message
+    });
+  }
+});
+
+// NEW: Commits endpoint - get commits by developer email
+app.post('/commits', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ 
+        error: 'Invalid or missing "email" parameter.' 
+      });
+    }
+    
+    const trimmedEmail = email.trim().toLowerCase();
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      return res.status(400).json({ 
+        error: 'Invalid or missing "email" parameter.' 
+      });
+    }
+    
+    // Find all emails in the developer's group
+    const emails = findGroupByEmail(trimmedEmail, devGroups);
+    
+    const allCommits = [];
+    
+    // Get commits for each email in the group
+    for (const devEmail of emails) {
+      const gitCommand = `git log --remotes -n 2 --pretty="format:%H|%an|%ae|%ad|%s" --date=iso --author="${devEmail}"`;
+      const result = await runGitCommand(gitCommand);
+      
+      if (result.success && result.stdout.trim() !== '') {
+        const lines = result.stdout.trim().split(/\r\n|\r|\n/);
+        
+        for (const line of lines) {
+          // Check if line has the expected format (at least 4 pipe separators)
+          if ((line.match(/\|/g) || []).length < 4) {
+            continue;
+          }
+          
+          const parts = line.split('|');
+          if (parts.length >= 5) {
+            const [hash, authorName, authorEmail, date, ...messageParts] = parts;
+            const message = messageParts.join('|'); // Rejoin in case message contains pipes
+            
+            allCommits.push({
+              hash: hash,
+              author: authorName,
+              email: authorEmail,
+              date: date,
+              message: message
+            });
+          }
+        }
+      }
+    }
+    
+    // Sort commits by date (newest first)
+    allCommits.sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      return dateB.getTime() - dateA.getTime();
+    });
+    
+    if (allCommits.length === 0) {
+      return res.json({ error: 'No commits found for this user.' });
+    }
+    
+    // Calculate date differences
+    const today = new Date();
+    const lastCommitDate = new Date(allCommits[0].date);
+    const prevCommitDate = allCommits.length > 1 ? new Date(allCommits[1].date) : null;
+    
+    const formatDate = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    };
+    
+    const getDateOnly = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    
+    const lastDay = getDateOnly(lastCommitDate);
+    const todayStr = getDateOnly(today);
+    const prevDay = prevCommitDate ? getDateOnly(prevCommitDate) : null;
+    
+    // Calculate days since last commit
+    const daysSinceLast = Math.floor((today.getTime() - lastCommitDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Calculate days between commits
+    const daysBetweenCommits = prevCommitDate ? 
+      Math.floor((lastCommitDate.getTime() - prevCommitDate.getTime()) / (1000 * 60 * 60 * 24)) : null;
+    
+    const response = {
+      last_commit: formatDate(lastCommitDate),
+      previous_commit: prevCommitDate ? formatDate(prevCommitDate) : null,
+      days_since_last_commit: daysSinceLast,
+      days_between_commits: daysBetweenCommits,
+      commits: allCommits.slice(0, 2)
+    };
+    
+    res.json(response);
+  } catch (error) {
+    console.error('Error getting commits:', error);
+    res.status(500).json({ 
+      error: 'Failed to get commits.',
+      details: error.message
+    });
   }
 });
 
