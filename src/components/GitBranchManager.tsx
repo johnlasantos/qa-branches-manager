@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import BranchList from '@/components/BranchList';
 import BranchSearch from '@/components/BranchSearch';
@@ -70,8 +71,9 @@ const GitBranchManager: React.FC = () => {
       <div className="w-1/2 flex flex-col">
         <div className="flex-1 overflow-hidden">
           <BranchSearch
-            branches={remoteBranches}
-            onSwitchBranch={handleSwitchBranch}
+            remoteBranches={remoteBranches}
+            localBranches={localBranches}
+            onSelectRemoteBranch={handleSwitchBranch}
             onSearch={handleSearch}
             onScrollEnd={fetchMoreRemoteBranches}
             hasMore={remoteBranchesHasMore}
