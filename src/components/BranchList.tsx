@@ -244,9 +244,9 @@ const BranchList: React.FC<BranchListProps> = ({
                                       }}
                                       variant="secondary"
                                       className="flex items-center bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
-                                      disabled={areActionsDisabled}
+                                      disabled={areActionsDisabled || isBranchUpdating}
                                     >
-                                      <RefreshCcw size={16} className={isUpdatingCurrentBranch || isUpdatingAllBranches ? "animate-spin" : ""} />
+                                      <RefreshCcw size={16} className={isUpdatingCurrentBranch || isUpdatingAllBranches || isBranchUpdating ? "animate-spin" : ""} />
                                     </Button>
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
@@ -318,7 +318,7 @@ const BranchList: React.FC<BranchListProps> = ({
                                         }));
                                       }}
                                       className="flex items-center bg-red-50 hover:bg-red-100 border-red-200 text-red-600"
-                                      disabled={areActionsDisabled}
+                                      disabled={areActionsDisabled || isBranchUpdating}
                                     >
                                       <Trash2 size={16} />
                                     </Button>
