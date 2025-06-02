@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AlertTriangle, ArrowLeftRight, Trash2, Search, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -386,7 +385,12 @@ const BranchList: React.FC<BranchListProps> = ({
                                     className="flex items-center bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
                                     disabled={areActionsDisabled}
                                   >
-                                    <ArrowLeftRight size={16} />
+                                    {/* Show spinning update icon if updating all branches and branch has remote, otherwise show switch icon */}
+                                    {isUpdatingAllBranches && branch.hasRemote ? (
+                                      <RefreshCcw size={16} className="animate-spin" />
+                                    ) : (
+                                      <ArrowLeftRight size={16} />
+                                    )}
                                   </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
