@@ -373,43 +373,70 @@ app.get('/branches', async (req, res) => {
     // Use for-each-ref which is much faster than git branch
     const localBranchesPromise = runGitCommand('git for-each-ref --format="%(refname:short)" refs/heads/');
     
-    // Get remote branches more efficiently
-    const remoteBranchesPromise = runGitCommand('git for-each-ref --format="%(refname:short)" refs/remotes/origin/');
+    // Get remote tracking info for each local branch to properly determine hasRemote
+    const branchTrackingPromise = runGitCommand('git for-each-ref --format="%(refname:short) %(upstream:short)" refs/heads/');
     
     // Execute commands in parallel
-    const [currentBranchResult, localBranchesResult, remoteBranchesResult] = await Promise.all([
+    const [currentBranchResult, localBranchesResult, branchTrackingResult] = await Promise.all([
       currentBranchPromise,
       localBranchesPromise, 
-      remoteBranchesPromise
+      branchTrackingPromise
     ]);
     
     const currentBranch = currentBranchResult.stdout.trim();
     
     // Parse local branches output
-    const allBranches = localBranchesResult.stdout
+    const localBranchNames = localBranchesResult.stdout
       .split('\n')
       .filter(Boolean)
-      .map(name => {
-        name = name.trim();
-        const isCurrent = name === currentBranch;
-        
-        return { 
-          name, 
-          current: isCurrent, 
-          isCurrent: isCurrent,
-          hasRemote: false // Will set this below
-        };
-      });
+      .map(name => name.trim());
     
-    // Parse remote branches and mark local branches that have remotes
-    const remoteNames = remoteBranchesResult.stdout
-      .split('\n')
-      .filter(Boolean)
-      .map(name => name.trim().replace('origin/', ''));
+    // Parse tracking information to determine which branches actually have valid remotes
+    const trackingInfo = new Map();
+    if (branchTrackingResult.success) {
+      branchTrackingResult.stdout
+        .split('\n')
+        .filter(Boolean)
+        .forEach(line => {
+          const parts = line.trim().split(' ');
+          const branchName = parts[0];
+          const upstream = parts[1] || null;
+          trackingInfo.set(branchName, upstream);
+        });
+    }
     
-    // Mark which local branches have remote tracking branches
-    allBranches.forEach(branch => {
-      branch.hasRemote = remoteNames.includes(branch.name);
+    // For branches with upstream, verify the remote ref actually exists
+    const validRemotes = new Set();
+    if (trackingInfo.size > 0) {
+      // Get all actual remote refs to verify they exist
+      const remoteRefsResult = await runGitCommand('git for-each-ref --format="%(refname:short)" refs/remotes/');
+      if (remoteRefsResult.success) {
+        remoteRefsResult.stdout
+          .split('\n')
+          .filter(Boolean)
+          .forEach(ref => {
+            const refName = ref.trim();
+            validRemotes.add(refName);
+          });
+      }
+    }
+    
+    // Build branch objects with accurate hasRemote status
+    const allBranches = localBranchNames.map(name => {
+      const isCurrent = name === currentBranch;
+      const upstream = trackingInfo.get(name);
+      
+      // A branch has a remote if:
+      // 1. It has an upstream configured AND
+      // 2. That upstream actually exists in refs/remotes/
+      const hasRemote = upstream && validRemotes.has(upstream);
+      
+      return { 
+        name, 
+        current: isCurrent, 
+        isCurrent: isCurrent,
+        hasRemote: Boolean(hasRemote)
+      };
     });
     
     // Get total count for pagination info
@@ -823,7 +850,13 @@ app.post('/cleanup', async (req, res) => {
       : 'No branches were removed.';
     
     res.json({ 
-      success: true, 
+      success: true,
+      overallSuccess: successResults.length > 0,
+      results: results.map(r => ({
+        branch: r.branch,
+        success: r.success,
+        output: r.output
+      })),
       message: message,
       stdout: message,
       stderr: errorResults.length > 0 ? errorResults.map(r => `Failed to delete ${r.branch}: ${r.output}`).join('\n') : '',
