@@ -29,6 +29,7 @@ export const useGitOperations = () => {
   const [remoteBranchesTotal, setRemoteBranchesTotal] = useState<number>(0);
   const [reloadTrigger, setReloadTrigger] = useState<number>(0);
   const [isUpdatingAllBranches, setIsUpdatingAllBranches] = useState<boolean>(false);
+  const [updatingBranches, setUpdatingBranches] = useState<Set<string>>(new Set());
 
   // Load initial set or reset branches with optimization for skipping refresh
   const fetchLocalBranches = useCallback(async (reset = true) => {
@@ -232,6 +233,10 @@ export const useGitOperations = () => {
     try {
       const result = await updateAllBranches(config.apiBaseUrl);
       
+      // Track which branches are being updated
+      const branchNames = result.results.map(r => r.branch);
+      setUpdatingBranches(new Set(branchNames));
+      
       // Format the output to display in the GitOutput component
       let formattedOutput = "Updating all branches:\n\n";
       let successCount = 0;
@@ -248,6 +253,11 @@ export const useGitOperations = () => {
       formattedOutput += `\nSummary: ${successCount} of ${result.results.length} branches updated successfully.`;
       
       setGitOutput(formattedOutput);
+      
+      // Clear updating branches after a short delay to show completion
+      setTimeout(() => {
+        setUpdatingBranches(new Set());
+      }, 1000);
       
       // Important: Set loading to false IMMEDIATELY before showing the toast
       setIsUpdatingAllBranches(false);
@@ -267,6 +277,7 @@ export const useGitOperations = () => {
     } catch (error) {
       // Important: Set loading to false immediately in case of error
       setIsUpdatingAllBranches(false);
+      setUpdatingBranches(new Set());
       
       // Make sure to display the error in the output panel
       if (error instanceof Error) {
@@ -344,6 +355,7 @@ export const useGitOperations = () => {
     gitOutput,
     isLoading,
     isUpdatingAllBranches,
+    updatingBranches,
     fetchLocalBranches,
     fetchMoreLocalBranches,
     fetchRemoteBranches,
