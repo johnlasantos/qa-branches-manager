@@ -29,7 +29,6 @@ export const useGitOperations = () => {
   const [remoteBranchesTotal, setRemoteBranchesTotal] = useState<number>(0);
   const [reloadTrigger, setReloadTrigger] = useState<number>(0);
   const [isUpdatingAllBranches, setIsUpdatingAllBranches] = useState<boolean>(false);
-  const [updatingBranches, setUpdatingBranches] = useState<Set<string>>(new Set());
 
   // Load initial set or reset branches with optimization for skipping refresh
   const fetchLocalBranches = useCallback(async (reset = true) => {
@@ -230,24 +229,8 @@ export const useGitOperations = () => {
   const handleUpdateAllBranches = async () => {
     setIsUpdatingAllBranches(true);
     setGitOutput('');
-    
     try {
       const result = await updateAllBranches(config.apiBaseUrl);
-      
-      // Track which branches are being updated
-      const branchesBeingUpdated = new Set(result.results.map(r => r.branch));
-      setUpdatingBranches(branchesBeingUpdated);
-      
-      // Simulate progressive updates by removing branches from updating set as they complete
-      result.results.forEach((branchResult, index) => {
-        setTimeout(() => {
-          setUpdatingBranches(prev => {
-            const updated = new Set(prev);
-            updated.delete(branchResult.branch);
-            return updated;
-          });
-        }, (index + 1) * 200); // Stagger the completion animations
-      });
       
       // Format the output to display in the GitOutput component
       let formattedOutput = "Updating all branches:\n\n";
@@ -279,17 +262,11 @@ export const useGitOperations = () => {
         });
       }
       
-      // Clear updating branches set after all animations complete
-      setTimeout(() => {
-        setUpdatingBranches(new Set());
-      }, result.results.length * 200 + 500);
-      
       // Always refresh local branches after batch update operation
       fetchLocalBranches(true);
     } catch (error) {
       // Important: Set loading to false immediately in case of error
       setIsUpdatingAllBranches(false);
-      setUpdatingBranches(new Set());
       
       // Make sure to display the error in the output panel
       if (error instanceof Error) {
@@ -367,7 +344,6 @@ export const useGitOperations = () => {
     gitOutput,
     isLoading,
     isUpdatingAllBranches,
-    updatingBranches,
     fetchLocalBranches,
     fetchMoreLocalBranches,
     fetchRemoteBranches,

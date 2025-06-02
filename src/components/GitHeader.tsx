@@ -6,25 +6,9 @@ import { useConfig } from '@/contexts/ConfigContext';
 
 interface GitHeaderProps {
   className?: string;
-  localBranchesTotal?: number;
-  remoteBranchesTotal?: number;
-  onUpdateAllBranches?: () => Promise<void>;
-  onCleanupBranches?: () => Promise<void>;
-  isUpdatingAllBranches?: boolean;
-  isLoading?: boolean;
-  onReloadLocalBranches?: () => void;
 }
 
-const GitHeader: React.FC<GitHeaderProps> = ({ 
-  className,
-  localBranchesTotal,
-  remoteBranchesTotal,
-  onUpdateAllBranches,
-  onCleanupBranches,
-  isUpdatingAllBranches,
-  isLoading,
-  onReloadLocalBranches
-}) => {
+const GitHeader: React.FC<GitHeaderProps> = ({ className }) => {
   const { config } = useConfig();
 
   return (
