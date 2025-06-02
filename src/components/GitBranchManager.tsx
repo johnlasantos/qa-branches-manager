@@ -22,7 +22,6 @@ const GitBranchManager: React.FC = () => {
     gitOutput,
     isLoading,
     isUpdatingAllBranches,
-    updatingBranches,
     fetchLocalBranches,
     fetchMoreLocalBranches,
     fetchRemoteBranches,
@@ -116,7 +115,6 @@ const GitBranchManager: React.FC = () => {
                 isLoading={isLoading}
                 isUpdatingCurrentBranch={isUpdatingCurrentBranch}
                 isUpdatingAllBranches={isUpdatingAllBranches}
-                updatingBranches={updatingBranches}
                 onScrollEnd={fetchMoreLocalBranches}
                 hasMore={localBranchesHasMore}
                 className="flex-1 overflow-hidden"
