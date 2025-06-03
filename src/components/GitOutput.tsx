@@ -170,6 +170,14 @@ const GitOutput: React.FC<GitOutputProps> = ({ output, className }) => {
           </span>
         );
       }
+      // Highlight "Your configuration specifies to merge with the ref" message
+      else if (line.includes('Your configuration specifies to merge with the ref')) {
+        return (
+          <span key={index} className="text-[#ea384c] block font-medium">
+            {line}
+          </span>
+        );
+      }
       // Highlight "Your branch is behind" message
       else if (line.includes('Your branch is behind')) {
         return (
