@@ -785,41 +785,91 @@ app.post('/pull', async (req, res) => {
   }
 });
 
-// Cleanup branches (prune stale branches) - OPTIMIZED with JavaScript-based branch detection
+// Cleanup branches (prune stale branches) - FIXED to match /branches logic
 app.post('/cleanup', async (req, res) => {
   try {
     // Clear cache for branches since we're modifying the branch list
     clearCache('branches');
     
-    // Get local branches using more efficient for-each-ref
-    const { stdout: localOutput } = await runGitCommand(
-      'git for-each-ref --format="%(refname:short) %(upstream)" refs/heads/'
-    );
-    
-    const localBranches = localOutput
-      .split('\n')
-      .filter(Boolean)
-      .map(line => {
-        const parts = line.trim().split(' ');
-        const name = parts[0];
-        const hasUpstream = parts.length > 1 && parts[1]; // If there's an upstream reference
-        
-        return { name, hasUpstream };
-      });
-    
     // Get current branch to avoid deleting it
     const { stdout: currentBranchOutput } = await runGitCommand('git rev-parse --abbrev-ref HEAD');
     const currentBranch = currentBranchOutput.trim();
     
-    // Find branches that don't have upstream (remote tracking branches)
-    const staleBranches = localBranches.filter(local => {
+    // Get local branches using the same logic as /branches endpoint
+    const localBranchesPromise = runGitCommand('git for-each-ref --format="%(refname:short)" refs/heads/');
+    const branchTrackingPromise = runGitCommand('git for-each-ref --format="%(refname:short) %(upstream:short)" refs/heads/');
+    
+    // Execute commands in parallel
+    const [localBranchesResult, branchTrackingResult] = await Promise.all([
+      localBranchesPromise,
+      branchTrackingPromise
+    ]);
+    
+    // Parse local branches
+    const localBranchNames = localBranchesResult.stdout
+      .split('\n')
+      .filter(Boolean)
+      .map(name => name.trim());
+    
+    // Parse tracking information
+    const trackingInfo = new Map();
+    if (branchTrackingResult.success) {
+      branchTrackingResult.stdout
+        .split('\n')
+        .filter(Boolean)
+        .forEach(line => {
+          const parts = line.trim().split(' ');
+          const branchName = parts[0];
+          const upstream = parts[1] || null;
+          trackingInfo.set(branchName, upstream);
+        });
+    }
+    
+    // Get all actual remote refs to verify they exist
+    const validRemotes = new Set();
+    const remoteRefsResult = await runGitCommand('git ls-remote --heads origin');
+    if (remoteRefsResult.success) {
+      remoteRefsResult.stdout
+        .split('\n')
+        .filter(Boolean)
+        .forEach(line => {
+          // Parse remote refs from ls-remote output: "hash refs/heads/branch-name"
+          const match = line.match(/refs\/heads\/(.+)$/);
+          if (match) {
+            validRemotes.add(match[1]);
+          }
+        });
+    }
+    
+    // Build branch objects with accurate hasRemote status (same logic as /branches)
+    const allBranches = localBranchNames.map(name => {
+      const upstream = trackingInfo.get(name);
+      
+      // A branch has a remote if:
+      // 1. It has an upstream configured AND
+      // 2. That upstream branch actually exists in the remote repository
+      let hasRemote = false;
+      if (upstream) {
+        // Extract branch name from upstream (e.g., "origin/feature-branch" -> "feature-branch")
+        const remoteBranchName = upstream.replace(/^origin\//, '');
+        hasRemote = validRemotes.has(remoteBranchName);
+      }
+      
+      return { name, hasRemote };
+    });
+    
+    // Find branches that should be deleted:
+    // - Not the current branch
+    // - Not protected branches (main, master, develop)
+    // - hasRemote === false
+    const staleBranches = allBranches.filter(branch => {
       // Skip current branch and protected branches
-      if (local.name === currentBranch || ['main', 'master', 'develop'].includes(local.name)) {
+      if (branch.name === currentBranch || ['main', 'master', 'develop'].includes(branch.name)) {
         return false;
       }
       
-      // Consider branches without upstream as stale
-      return !local.hasUpstream;
+      // Delete branches that don't have valid remotes
+      return !branch.hasRemote;
     });
     
     if (staleBranches.length === 0) {
