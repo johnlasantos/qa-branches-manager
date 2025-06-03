@@ -405,20 +405,20 @@ app.get('/branches', async (req, res) => {
         });
     }
     
-    // For branches with upstream, verify the remote ref actually exists
+    // Get all actual remote refs to verify they exist
     const validRemotes = new Set();
-    if (trackingInfo.size > 0) {
-      // Get all actual remote refs to verify they exist
-      const remoteRefsResult = await runGitCommand('git for-each-ref --format="%(refname:short)" refs/remotes/');
-      if (remoteRefsResult.success) {
-        remoteRefsResult.stdout
-          .split('\n')
-          .filter(Boolean)
-          .forEach(ref => {
-            const refName = ref.trim();
-            validRemotes.add(refName);
-          });
-      }
+    const remoteRefsResult = await runGitCommand('git ls-remote --heads origin');
+    if (remoteRefsResult.success) {
+      remoteRefsResult.stdout
+        .split('\n')
+        .filter(Boolean)
+        .forEach(line => {
+          // Parse remote refs from ls-remote output: "hash refs/heads/branch-name"
+          const match = line.match(/refs\/heads\/(.+)$/);
+          if (match) {
+            validRemotes.add(match[1]);
+          }
+        });
     }
     
     // Build branch objects with accurate hasRemote status
@@ -428,8 +428,13 @@ app.get('/branches', async (req, res) => {
       
       // A branch has a remote if:
       // 1. It has an upstream configured AND
-      // 2. That upstream actually exists in refs/remotes/
-      const hasRemote = upstream && validRemotes.has(upstream);
+      // 2. That upstream branch actually exists in the remote repository
+      let hasRemote = false;
+      if (upstream) {
+        // Extract branch name from upstream (e.g., "origin/feature-branch" -> "feature-branch")
+        const remoteBranchName = upstream.replace(/^origin\//, '');
+        hasRemote = validRemotes.has(remoteBranchName);
+      }
       
       return { 
         name, 
